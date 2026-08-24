@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment — holds live database and OAuth secrets.
+# Only .env.example belongs in version control.
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp

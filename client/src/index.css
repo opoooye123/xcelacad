@@ -1,0 +1,476 @@
+@import "tailwindcss";
+
+/* ==========================================================
+   XCEL ACADEMY — DESIGN SYSTEM
+   ==========================================================
+   Two layers of theming:
+
+   1. Runtime brand — `--brand-primary` / `--brand-accent` are
+      plain custom properties that SettingsContext overwrites
+      from the admin's CMS branding settings. Every shade below
+      is derived from them with color-mix(), so changing one hex
+      in the dashboard restyles the whole product.
+
+   2. Light / dark surfaces — semantic tokens (bg, surface, fg,
+      muted, border) redefined under `.dark`. ThemeContext puts
+      that class on <html>.
+
+   `@theme inline` is what makes 1. work: it tells Tailwind to
+   emit `var(--color-brand-600)` in utilities rather than baking
+   in a literal, so a runtime change to --brand-primary
+   propagates without rebuilding CSS.
+   ========================================================== */
+
+/* Class-based dark mode instead of the prefers-color-scheme
+   default, because the user can override the system setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* --- Runtime brand (CMS-controlled) --- */
+  --brand-primary: #4f46e5;
+  --brand-accent: #0ea5e9;
+
+  /* --- Derived brand ramp --- */
+  --brand-50: color-mix(in oklab, var(--brand-primary) 8%, white);
+  --brand-100: color-mix(in oklab, var(--brand-primary) 16%, white);
+  --brand-200: color-mix(in oklab, var(--brand-primary) 30%, white);
+  --brand-300: color-mix(in oklab, var(--brand-primary) 48%, white);
+  --brand-400: color-mix(in oklab, var(--brand-primary) 72%, white);
+  --brand-500: var(--brand-primary);
+  --brand-600: color-mix(in oklab, var(--brand-primary) 88%, black);
+  --brand-700: color-mix(in oklab, var(--brand-primary) 74%, black);
+  --brand-800: color-mix(in oklab, var(--brand-primary) 60%, black);
+  --brand-900: color-mix(in oklab, var(--brand-primary) 46%, black);
+
+  --accent-100: color-mix(in oklab, var(--brand-accent) 16%, white);
+  --accent-300: color-mix(in oklab, var(--brand-accent) 48%, white);
+  --accent-500: var(--brand-accent);
+  --accent-600: color-mix(in oklab, var(--brand-accent) 88%, black);
+  --accent-700: color-mix(in oklab, var(--brand-accent) 74%, black);
+
+  /* --- Semantic surfaces (light) --- */
+  --ui-bg: #f7f8fb;
+  --ui-surface: #ffffff;
+  --ui-surface-2: #f2f4f8;
+  --ui-border: #e3e7ee;
+  --ui-fg: #101425;
+  --ui-fg-muted: #5b6478;
+  --ui-fg-subtle: #8a93a6;
+
+  /* Feedback colours are fixed — a CMS-picked brand hue must
+     never make "wrong answer" read as success. */
+  --ui-success: #15803d;
+  --ui-success-soft: #dcfce7;
+  --ui-warning: #b45309;
+  --ui-warning-soft: #fef3c7;
+  --ui-danger: #b91c1c;
+  --ui-danger-soft: #fee2e2;
+  --ui-info: #1d4ed8;
+  --ui-info-soft: #dbeafe;
+
+  color-scheme: light;
+}
+
+.dark {
+  /* Shades flip toward the light end so brand text stays
+     readable on dark surfaces. */
+  --brand-50: color-mix(in oklab, var(--brand-primary) 22%, black);
+  --brand-100: color-mix(in oklab, var(--brand-primary) 32%, black);
+  --brand-200: color-mix(in oklab, var(--brand-primary) 48%, black);
+  --brand-300: color-mix(in oklab, var(--brand-primary) 62%, black);
+  --brand-400: color-mix(in oklab, var(--brand-primary) 82%, black);
+  --brand-500: var(--brand-primary);
+  --brand-600: color-mix(in oklab, var(--brand-primary) 80%, white);
+  --brand-700: color-mix(in oklab, var(--brand-primary) 62%, white);
+  --brand-800: color-mix(in oklab, var(--brand-primary) 44%, white);
+  --brand-900: color-mix(in oklab, var(--brand-primary) 28%, white);
+
+  --accent-100: color-mix(in oklab, var(--brand-accent) 32%, black);
+  --accent-300: color-mix(in oklab, var(--brand-accent) 58%, black);
+  --accent-500: var(--brand-accent);
+  --accent-600: color-mix(in oklab, var(--brand-accent) 80%, white);
+  --accent-700: color-mix(in oklab, var(--brand-accent) 62%, white);
+
+  --ui-bg: #0a0d16;
+  --ui-surface: #121727;
+  --ui-surface-2: #1a2032;
+  --ui-border: #262e42;
+  --ui-fg: #eef1f7;
+  --ui-fg-muted: #a3adc2;
+  --ui-fg-subtle: #6f7b92;
+
+  --ui-success: #4ade80;
+  --ui-success-soft: #14321f;
+  --ui-warning: #fbbf24;
+  --ui-warning-soft: #3a2a08;
+  --ui-danger: #f87171;
+  --ui-danger-soft: #3a1414;
+  --ui-info: #60a5fa;
+  --ui-info-soft: #12244a;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  /* Brand */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+
+  --color-accent-100: var(--accent-100);
+  --color-accent-300: var(--accent-300);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+
+  /* Surfaces + text */
+  --color-bg: var(--ui-bg);
+  --color-surface: var(--ui-surface);
+  --color-surface-2: var(--ui-surface-2);
+  --color-line: var(--ui-border);
+  --color-ink: var(--ui-fg);
+  --color-muted: var(--ui-fg-muted);
+  --color-subtle: var(--ui-fg-subtle);
+
+  /* Feedback */
+  --color-success: var(--ui-success);
+  --color-success-soft: var(--ui-success-soft);
+  --color-warning: var(--ui-warning);
+  --color-warning-soft: var(--ui-warning-soft);
+  --color-danger: var(--ui-danger);
+  --color-danger-soft: var(--ui-danger-soft);
+  --color-info: var(--ui-info);
+  --color-info-soft: var(--ui-info-soft);
+
+  /* Type */
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+    Consolas, "Liberation Mono", monospace;
+
+  /* Elevation tuned for both themes */
+  --shadow-card: 0 1px 2px rgb(16 20 37 / 0.04),
+    0 8px 24px -12px rgb(16 20 37 / 0.12);
+  --shadow-pop: 0 12px 40px -12px rgb(16 20 37 / 0.28);
+
+  /* Layout */
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+
+  /* Extra breakpoint for very narrow phones (iPhone SE) */
+  --breakpoint-xs: 24rem;
+}
+
+/* ==========================================================
+   BASE
+   ========================================================== */
+
+@layer base {
+  * {
+    /* Keeps long unbroken strings — question text pasted from a
+       PDF, a URL in a note — from widening the page on mobile. */
+    min-width: 0;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Never let a wide table or chart scroll the whole page. */
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Hitting a real 44px target matters more on phones than the
+     browser default 16px inputs. */
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::placeholder {
+    color: var(--color-subtle);
+  }
+
+  /* Consistent scrollbars in both themes */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-line);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+/* ==========================================================
+   COMPONENTS
+   ==========================================================
+   Only patterns repeated across many screens live here. Anything
+   used once stays inline in its component.
+   ========================================================== */
+
+@layer components {
+  /* --- Shell --- */
+
+  .shell {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 40rem) {
+    .shell {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  .shell-narrow {
+    width: 100%;
+    max-width: 48rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  /* --- Card --- */
+
+  .card {
+    @apply rounded-lg border border-line bg-surface shadow-card;
+  }
+
+  .card-pad {
+    @apply p-4 sm:p-5 lg:p-6;
+  }
+
+  /* --- Buttons --- */
+
+  .btn {
+    @apply inline-flex min-h-11 shrink-0 cursor-pointer items-center
+      justify-center gap-2 rounded-md border border-transparent
+      px-4 text-sm font-semibold whitespace-nowrap
+      transition-[background-color,border-color,color,box-shadow,transform]
+      duration-150 select-none
+      active:scale-[0.985]
+      disabled:pointer-events-none disabled:opacity-55;
+  }
+
+  .btn-primary {
+    @apply bg-brand-500 text-white hover:bg-brand-600;
+  }
+
+  .btn-accent {
+    @apply bg-accent-500 text-white hover:bg-accent-600;
+  }
+
+  .btn-outline {
+    @apply border-line bg-surface text-ink hover:bg-surface-2;
+  }
+
+  .btn-ghost {
+    @apply text-muted hover:bg-surface-2 hover:text-ink;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white hover:brightness-95;
+  }
+
+  .btn-sm {
+    @apply min-h-9 px-3 text-[0.8125rem];
+  }
+
+  .btn-lg {
+    @apply min-h-12 px-6 text-base;
+  }
+
+  .btn-icon {
+    @apply min-h-10 w-10 px-0;
+  }
+
+  /* --- Forms --- */
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-muted;
+  }
+
+  .input {
+    @apply min-h-11 w-full rounded-md border border-line bg-surface
+      px-3 text-sm text-ink
+      transition-[border-color,box-shadow] duration-150
+      focus:border-brand-500 focus:outline-none
+      disabled:opacity-60;
+  }
+
+  /* Native select needs its own arrow once appearance is reset,
+     but we keep the default arrow and only match the metrics. */
+  select.input {
+    @apply pr-9;
+  }
+
+  textarea.input {
+    @apply min-h-28 py-2.5 leading-relaxed;
+  }
+
+  .hint {
+    @apply mt-1.5 text-xs text-subtle;
+  }
+
+  .error-text {
+    @apply mt-1.5 text-xs font-medium text-danger;
+  }
+
+  /* --- Badges --- */
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1
+      text-[0.6875rem] font-semibold tracking-wide uppercase;
+  }
+
+  .badge-brand {
+    @apply bg-brand-50 text-brand-700;
+  }
+
+  .badge-neutral {
+    @apply bg-surface-2 text-muted;
+  }
+
+  .badge-success {
+    @apply bg-success-soft text-success;
+  }
+
+  .badge-warning {
+    @apply bg-warning-soft text-warning;
+  }
+
+  .badge-danger {
+    @apply bg-danger-soft text-danger;
+  }
+
+  .badge-info {
+    @apply bg-info-soft text-info;
+  }
+
+  /* --- Misc --- */
+
+  /* Wide content (tables, charts) scrolls inside its own box so
+     the page body never scrolls sideways. */
+  .scroll-x {
+    @apply -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0;
+    scrollbar-gutter: stable;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-md bg-surface-2;
+  }
+
+  /* Visible only to screen readers until focused */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================
+   UTILITIES
+   ========================================================== */
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Safe-area padding for the mobile bottom nav on notched
+   phones, so the last row of content is never hidden. */
+@utility pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+@utility mb-safe-nav {
+  margin-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
