@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://xcelacad.onrender.com/api";
 
 const ExamResult = () => {
   const { id } = useParams();

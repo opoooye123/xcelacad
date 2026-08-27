@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://xcelacad.onrender.com/api";
 
 const AdminTopics = () => {
   const { token } = useAuth();

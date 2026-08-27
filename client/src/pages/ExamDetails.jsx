@@ -32,7 +32,7 @@ const ExamDetails = () => {
       console.log("ExamDetails token:", token);
 
       const response = await fetch(
-        `http://localhost:5000/api/exams/${id}`,
+        `https://xcelacad.onrender.com/api/exams/${id}`,
         {
           method: "GET",
           headers: {

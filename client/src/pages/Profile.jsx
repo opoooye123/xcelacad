@@ -29,7 +29,7 @@ const Profile = () => {
         setError("");
 
         const response = await fetch(
-          "http://localhost:5000/api/users/profile",
+          "https://xcelacad.onrender.com/api/users/profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -80,7 +80,7 @@ const Profile = () => {
       setError("");
 
       const response = await fetch(
-        "http://localhost:5000/api/users/profile",
+        "https://xcelacad.onrender.com/api/users/profile",
         {
           method: "PUT",
 
