@@ -10,7 +10,8 @@
 
 export const API_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
+   console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+console.log("FINAL API_URL:", API_URL);
 const TOKEN_KEY = "xcelToken";
 const USER_KEY = "xcelUser";
 
