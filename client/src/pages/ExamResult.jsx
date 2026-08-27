@@ -127,18 +127,20 @@ const ExamResult = () => {
   // FETCH FULL RESULT
   // ==========================================
 
-  const fetchFullResult = async () => {
-    console.log(
-      "================================="
-    );
-    console.log("FETCHING RESULT FROM SERVER");
-    console.log("Attempt ID:", id);
-    console.log(
-      "================================="
-    );
 
+const fetchFullResult = async () => {
+  console.log(
+    "================================="
+  );
+  console.log("FETCHING RESULT FROM SERVER");
+  console.log("Attempt ID:", id);
+  console.log(
+    "================================="
+  );
+
+  try {
     const response = await fetch(
-      `${API_URL}/exams/attempt/${id}`,
+      `${API_URL}/attempts/${id}/result`,
       {
         method: "GET",
         headers: {
@@ -192,7 +194,15 @@ const ExamResult = () => {
     setResult(serverResult);
 
     return serverResult;
-  };
+  } catch (error) {
+    console.error(
+      "Fetch result error:",
+      error
+    );
+
+    throw error;
+  }
+};
 
   // ==========================================
   // STATISTICS

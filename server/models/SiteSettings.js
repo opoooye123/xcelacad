@@ -14,55 +14,123 @@ const mongoose = require("mongoose");
 
 const linkSchema = new mongoose.Schema(
   {
-    label: { type: String, trim: true },
-    href: { type: String, trim: true },
+    label: {
+      type: String,
+      trim: true,
+    },
+
+    href: {
+      type: String,
+      trim: true,
+    },
   },
   { _id: false }
 );
 
 const navLinkSchema = new mongoose.Schema({
-  label: { type: String, trim: true },
-  href: { type: String, trim: true },
+  label: {
+    type: String,
+    trim: true,
+  },
 
-  // Hide a link without deleting it
-  isVisible: { type: Boolean, default: true },
+  href: {
+    type: String,
+    trim: true,
+  },
 
-  order: { type: Number, default: 0 },
+  isVisible: {
+    type: Boolean,
+    default: true,
+  },
+
+  order: {
+    type: Number,
+    default: 0,
+  },
 });
 
 const footerGroupSchema = new mongoose.Schema({
-  title: { type: String, trim: true },
+  title: {
+    type: String,
+    trim: true,
+  },
+
   links: [linkSchema],
 });
 
 const statSchema = new mongoose.Schema({
-  label: { type: String, trim: true },
-  value: { type: String, trim: true },
+  label: {
+    type: String,
+    trim: true,
+  },
+
+  value: {
+    type: String,
+    trim: true,
+  },
 });
 
 const stepSchema = new mongoose.Schema({
-  title: { type: String, trim: true },
-  description: { type: String, trim: true },
+  title: {
+    type: String,
+    trim: true,
+  },
 
-  // An emoji, kept simple so admins can paste one
-  icon: { type: String, trim: true },
+  description: {
+    type: String,
+    trim: true,
+  },
+
+  icon: {
+    type: String,
+    trim: true,
+  },
 });
 
 const testimonialSchema = new mongoose.Schema({
-  name: { type: String, trim: true },
-  role: { type: String, trim: true },
-  quote: { type: String, trim: true },
-  avatarUrl: { type: String, trim: true },
+  name: {
+    type: String,
+    trim: true,
+  },
+
+  role: {
+    type: String,
+    trim: true,
+  },
+
+  quote: {
+    type: String,
+    trim: true,
+  },
+
+  avatarUrl: {
+    type: String,
+    trim: true,
+  },
 });
 
 const faqSchema = new mongoose.Schema({
-  question: { type: String, trim: true },
-  answer: { type: String, trim: true },
+  question: {
+    type: String,
+    trim: true,
+  },
+
+  answer: {
+    type: String,
+    trim: true,
+  },
 });
+
+// ==========================================
+// SITE SETTINGS SCHEMA
+// ==========================================
 
 const siteSettingsSchema = new mongoose.Schema(
   {
-    // Guarantees a single settings document
+    // ==========================================
+    // SINGLETON KEY
+    // ==========================================
+
     key: {
       type: String,
       default: "default",
@@ -84,11 +152,14 @@ const siteSettingsSchema = new mongoose.Schema(
       tagline: {
         type: String,
         trim: true,
-        default:
-          "Practice smarter. Score higher.",
+        default: "Practice smarter. Score higher.",
       },
 
-      logoUrl: { type: String, trim: true, default: "" },
+      logoUrl: {
+        type: String,
+        trim: true,
+        default: "",
+      },
 
       primaryColor: {
         type: String,
@@ -110,7 +181,7 @@ const siteSettingsSchema = new mongoose.Schema(
     },
 
     // ==========================================
-    // LANDING PAGE CONTENT
+    // LANDING PAGE
     // ==========================================
 
     landing: {
@@ -124,8 +195,7 @@ const siteSettingsSchema = new mongoose.Schema(
         headline: {
           type: String,
           trim: true,
-          default:
-            "Pass your exams with real past questions",
+          default: "Pass your exams with real past questions",
         },
 
         subheadline: {
@@ -141,6 +211,7 @@ const siteSettingsSchema = new mongoose.Schema(
             trim: true,
             default: "Start practising free",
           },
+
           href: {
             type: String,
             trim: true,
@@ -154,6 +225,7 @@ const siteSettingsSchema = new mongoose.Schema(
             trim: true,
             default: "Browse subjects",
           },
+
           href: {
             type: String,
             trim: true,
@@ -161,21 +233,39 @@ const siteSettingsSchema = new mongoose.Schema(
           },
         },
 
-        imageUrl: { type: String, trim: true, default: "" },
+        imageUrl: {
+          type: String,
+          trim: true,
+          default: "",
+        },
       },
 
       stats: {
         type: [statSchema],
+
         default: () => [
-          { label: "Past questions", value: "10,000+" },
-          { label: "Subjects covered", value: "25" },
-          { label: "Students practising", value: "12,400" },
-          { label: "Average score lift", value: "27%" },
+          {
+            label: "Past questions",
+            value: "10,000+",
+          },
+          {
+            label: "Subjects covered",
+            value: "25",
+          },
+          {
+            label: "Students practising",
+            value: "12,400",
+          },
+          {
+            label: "Average score lift",
+            value: "27%",
+          },
         ],
       },
 
       howItWorks: {
         type: [stepSchema],
+
         default: () => [
           {
             icon: "📚",
@@ -183,12 +273,14 @@ const siteSettingsSchema = new mongoose.Schema(
             description:
               "Choose any subject, exam body and past-paper year. We build the practice set instantly.",
           },
+
           {
             icon: "⏱️",
             title: "Sit a timed CBT",
             description:
               "The same timer, layout and question navigator you will meet on exam day. Answers autosave as you go.",
           },
+
           {
             icon: "📈",
             title: "See what to fix",
@@ -200,6 +292,7 @@ const siteSettingsSchema = new mongoose.Schema(
 
       testimonials: {
         type: [testimonialSchema],
+
         default: () => [
           {
             name: "Adaeze O.",
@@ -208,6 +301,7 @@ const siteSettingsSchema = new mongoose.Schema(
               "The topic breakdown showed me I was losing everything on Circle Geometry. Two weeks of drilling it changed my whole score.",
             avatarUrl: "",
           },
+
           {
             name: "Ibrahim M.",
             role: "Post-UTME, Unilorin",
@@ -215,6 +309,7 @@ const siteSettingsSchema = new mongoose.Schema(
               "Timed practice was the difference. By the real exam the countdown did not rattle me at all.",
             avatarUrl: "",
           },
+
           {
             name: "Chidi N.",
             role: "WAEC candidate",
@@ -227,23 +322,27 @@ const siteSettingsSchema = new mongoose.Schema(
 
       faq: {
         type: [faqSchema],
+
         default: () => [
           {
             question: "Is Xcel Academy free?",
             answer:
               "Yes. Create an account with Google and you can start practising immediately at no cost.",
           },
+
           {
             question: "Which exams are covered?",
             answer:
               "JAMB, Post-UTME, WAEC and NECO, plus open practice sets you can build by subject, topic and year.",
           },
+
           {
             question:
               "Do the questions come with explanations?",
             answer:
               "Every question can carry a worked explanation, shown on your result page after you submit.",
           },
+
           {
             question: "Can I practise on my phone?",
             answer:
@@ -276,26 +375,36 @@ const siteSettingsSchema = new mongoose.Schema(
     navigation: {
       navLinks: {
         type: [navLinkSchema],
+
         default: () => [
-          { label: "Home", href: "/", isVisible: true, order: 1 },
+          {
+            label: "Home",
+            href: "/",
+            isVisible: true,
+            order: 1,
+          },
+
           {
             label: "Subjects",
             href: "/subjects",
             isVisible: true,
             order: 2,
           },
+
           {
             label: "Leaderboard",
             href: "/leaderboard",
             isVisible: true,
             order: 3,
           },
+
           {
             label: "Study Notes",
             href: "/materials",
             isVisible: true,
             order: 4,
           },
+
           {
             label: "FAQ",
             href: "/faq",
@@ -307,22 +416,52 @@ const siteSettingsSchema = new mongoose.Schema(
 
       footerGroups: {
         type: [footerGroupSchema],
+
         default: () => [
           {
             title: "Practice",
+
             links: [
-              { label: "Subjects", href: "/subjects" },
-              { label: "Mock exams", href: "/exams" },
-              { label: "Study notes", href: "/materials" },
-              { label: "Leaderboard", href: "/leaderboard" },
+              {
+                label: "Subjects",
+                href: "/subjects",
+              },
+
+              {
+                label: "Mock exams",
+                href: "/exams",
+              },
+
+              {
+                label: "Study notes",
+                href: "/materials",
+              },
+
+              {
+                label: "Leaderboard",
+                href: "/leaderboard",
+              },
             ],
           },
+
           {
             title: "Company",
+
             links: [
-              { label: "About", href: "/about" },
-              { label: "Contact", href: "/contact" },
-              { label: "FAQ", href: "/faq" },
+              {
+                label: "About",
+                href: "/about",
+              },
+
+              {
+                label: "Contact",
+                href: "/contact",
+              },
+
+              {
+                label: "FAQ",
+                href: "/faq",
+              },
             ],
           },
         ],
@@ -330,10 +469,22 @@ const siteSettingsSchema = new mongoose.Schema(
 
       socialLinks: {
         type: [linkSchema],
+
         default: () => [
-          { label: "Twitter", href: "" },
-          { label: "Instagram", href: "" },
-          { label: "WhatsApp", href: "" },
+          {
+            label: "Twitter",
+            href: "",
+          },
+
+          {
+            label: "Instagram",
+            href: "",
+          },
+
+          {
+            label: "WhatsApp",
+            href: "",
+          },
         ],
       },
 
@@ -355,7 +506,10 @@ const siteSettingsSchema = new mongoose.Schema(
     // ==========================================
 
     banner: {
-      enabled: { type: Boolean, default: false },
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
 
       message: {
         type: String,
@@ -363,8 +517,17 @@ const siteSettingsSchema = new mongoose.Schema(
         default: "",
       },
 
-      linkLabel: { type: String, trim: true, default: "" },
-      linkHref: { type: String, trim: true, default: "" },
+      linkLabel: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+
+      linkHref: {
+        type: String,
+        trim: true,
+        default: "",
+      },
 
       variant: {
         type: String,
@@ -372,8 +535,15 @@ const siteSettingsSchema = new mongoose.Schema(
         default: "info",
       },
 
-      startsAt: { type: Date, default: null },
-      endsAt: { type: Date, default: null },
+      startsAt: {
+        type: Date,
+        default: null,
+      },
+
+      endsAt: {
+        type: Date,
+        default: null,
+      },
     },
 
     // ==========================================
@@ -381,13 +551,40 @@ const siteSettingsSchema = new mongoose.Schema(
     // ==========================================
 
     features: {
-      leaderboard: { type: Boolean, default: true },
-      studyMaterials: { type: Boolean, default: true },
-      practice: { type: Boolean, default: true },
-      exams: { type: Boolean, default: true },
-      analytics: { type: Boolean, default: true },
-      registrationOpen: { type: Boolean, default: true },
-      maintenanceMode: { type: Boolean, default: false },
+      leaderboard: {
+        type: Boolean,
+        default: true,
+      },
+
+      studyMaterials: {
+        type: Boolean,
+        default: true,
+      },
+
+      practice: {
+        type: Boolean,
+        default: true,
+      },
+
+      exams: {
+        type: Boolean,
+        default: true,
+      },
+
+      analytics: {
+        type: Boolean,
+        default: true,
+      },
+
+      registrationOpen: {
+        type: Boolean,
+        default: true,
+      },
+
+      maintenanceMode: {
+        type: Boolean,
+        default: false,
+      },
     },
 
     // ==========================================
@@ -410,11 +607,16 @@ const siteSettingsSchema = new mongoose.Schema(
       ],
     },
 
+    // ==========================================
+    // LAST ADMIN TO UPDATE SETTINGS
+    // ==========================================
+
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
   },
+
   {
     timestamps: true,
   }
@@ -423,22 +625,82 @@ const siteSettingsSchema = new mongoose.Schema(
 // ==========================================
 // SINGLETON ACCESSOR
 // ==========================================
-// Always returns a settings document, creating
-// one from the schema defaults on first call so
-// the public site renders before any admin edit.
+// IMPORTANT:
+// We intentionally do NOT use upsert here.
+//
+// The previous implementation used:
+//
+//   findOneAndUpdate(..., { upsert: true })
+//
+// Your database already contains a document with
+// key = "default". Under certain circumstances,
+// MongoDB/Mongoose attempted another insert and
+// produced:
+//
+//   E11000 duplicate key error
+//   dup key: { key: "default" }
+//
+// This implementation first looks for the existing
+// document. If it exists, it is returned.
+//
+// If it does not exist, a new document is created
+// with schema defaults.
+//
+// This guarantees that the application uses the
+// existing settings document instead of trying to
+// insert another "default" document.
+// ==========================================
 
 siteSettingsSchema.statics.getSettings = async function () {
-  let settings = await this.findOne({ key: "default" });
+  // 1. Try to find the existing singleton.
+  let settings = await this.findOne({
+    key: "default",
+  });
 
-  if (!settings) {
-    settings = await this.create({ key: "default" });
+  // 2. If it exists, return it.
+  if (settings) {
+    return settings;
   }
 
-  return settings;
+  // 3. No settings document exists yet.
+  // Create the first/default one.
+  try {
+    settings = await this.create({
+      key: "default",
+    });
+
+    return settings;
+  } catch (error) {
+    // ==========================================
+    // RACE CONDITION PROTECTION
+    // ==========================================
+    // If two requests reach this function at exactly
+    // the same time, both could see no document and
+    // attempt to create one.
+    //
+    // MongoDB's unique index prevents the duplicate.
+    // In that situation, simply fetch the document
+    // that the other request created.
+    // ==========================================
+
+    if (error?.code === 11000) {
+      settings = await this.findOne({
+        key: "default",
+      });
+
+      if (settings) {
+        return settings;
+      }
+    }
+
+    throw error;
+  }
 };
 
-// True only while the banner is enabled AND we are
-// inside its (optional) date window.
+// ==========================================
+// BANNER LIVE CHECK
+// ==========================================
+
 siteSettingsSchema.methods.isBannerLive = function () {
   const banner = this.banner || {};
 
@@ -458,6 +720,10 @@ siteSettingsSchema.methods.isBannerLive = function () {
 
   return true;
 };
+
+// ==========================================
+// MODEL
+// ==========================================
 
 module.exports = mongoose.model(
   "SiteSettings",

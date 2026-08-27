@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ExamList from "../componenet/ExamList";
+import { API_URL } from "../lib/api";
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,14 +28,16 @@ const Dashboard = () => {
     try {
       setHistoryLoading(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/exams/attempts/history",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+     const response = await fetch(
+  `${API_URL}/attempts/history`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  }
+);
 
       const data = await response.json();
 

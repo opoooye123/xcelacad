@@ -42,50 +42,59 @@ const AuthSuccess = () => {
   // land after the redirect.
   const handled = useRef(false);
 
-  useEffect(() => {
-    if (handled.current) return;
+useEffect(() => {
+  if (handled.current) return;
 
-    handled.current = true;
+  handled.current = true;
 
-    const token = searchParams.get("token");
+  const token = searchParams.get("token");
 
-    if (!token) {
-      navigate("/login?error=auth_failed", {
-        replace: true,
-      });
+  if (!token) {
+    navigate("/login?error=auth_failed", {
+      replace: true,
+    });
 
-      return;
-    }
+    return;
+  }
 
-    const destination = takeNext() || "/dashboard";
+  apiFetch(endpoints.auth.me, {
+    auth: false,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((data) => {
+      if (!data?.user) {
+        throw new Error("Malformed response");
+      }
 
-    apiFetch(endpoints.auth.me, {
-      auth: false,
-      headers: { Authorization: `Bearer ${token}` },
+      // Store the authenticated user and token
+      login(data.user, token);
+
+      // Admins go to the admin panel by default.
+      // Students go to the student dashboard.
+      const destination =
+        takeNext() ||
+        (data.user.role === "admin"
+          ? "/admin"
+          : "/dashboard");
+
+      navigate(destination, { replace: true });
     })
-      .then((data) => {
-        if (!data?.user) {
-          throw new Error("Malformed response");
-        }
+    .catch((requestError) => {
+      // A 403 means the account exists but is blocked.
+      if (requestError?.status === 403) {
+        navigate("/login?error=blocked", {
+          replace: true,
+        });
 
-        login(data.user, token);
+        return;
+      }
 
-        navigate(destination, { replace: true });
-      })
-      .catch((requestError) => {
-        // A 403 here means the account exists but is blocked —
-        // worth saying so rather than showing a generic failure.
-        if (requestError?.status === 403) {
-          navigate("/login?error=blocked", {
-            replace: true,
-          });
+      setError(requestError);
+    });
+}, [searchParams, navigate, login]);
 
-          return;
-        }
-
-        setError(requestError);
-      });
-  }, [searchParams, navigate, login]);
 
   return (
     <div className="grid min-h-dvh place-items-center bg-bg px-4 py-12">

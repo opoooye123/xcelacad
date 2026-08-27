@@ -112,12 +112,13 @@ const getPublicSettings = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get public settings error:", error);
+  console.error("Get public settings error:", error);
 
-    return res.status(500).json({
-      message: "Server error",
-    });
-  }
+  return res.status(500).json({
+    message: error.message || "Server error",
+    error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+  });
+}
 };
 
 // ==========================================

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { API_URL } from "../lib/api";
+
 
 const ExamHistory = () => {
   const navigate = useNavigate();
@@ -33,15 +35,16 @@ const ExamHistory = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch(
-        "http://localhost:5000/api/exams/attempts/history",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+    const response = await fetch(
+  `${API_URL}/attempts/history`,
+  {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  }
+);
       const data = await response.json();
 
       if (!response.ok) {

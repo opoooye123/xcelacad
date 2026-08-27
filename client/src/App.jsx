@@ -74,13 +74,13 @@ const AdminSubjects = lazy(
 const AdminTopics = lazy(
   () => import("./pages/admin/AdminTopics")
 );
-const AdminQuestions = lazy(
+ const AdminQuestions = lazy(
   () => import("./pages/admin/AdminQuestions")
 );
 const AdminQuestionImport = lazy(
   () => import("./pages/admin/AdminQuestionImport")
-);
-const AdminExams = lazy(
+); 
+ const AdminExams = lazy(
   () => import("./pages/admin/AdminExams")
 );
 const AdminMaterials = lazy(
@@ -91,7 +91,7 @@ const AdminUsers = lazy(
 );
 const AdminSettings = lazy(
   () => import("./pages/admin/AdminSettings")
-);
+); 
 
 // Carries the :id across a renamed route so old bookmarks and
 // shared links still land on the right record.
