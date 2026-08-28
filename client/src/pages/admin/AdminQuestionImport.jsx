@@ -2,13 +2,23 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useToast } from "../../context/ToastContext";
-import { useAsyncAction, useDocumentTitle } from "../../hooks/useApi";
+import {
+  useAsyncAction,
+  useDocumentTitle,
+} from "../../hooks/useApi";
+
 import { api, endpoints } from "../../lib/api";
+
 import {
   PageHeader,
   EmptyState,
 } from "../../components/ui";
+
 import { UploadIcon } from "../../components/ui/Icons";
+
+// ==========================================================
+// FORMAT IMPORT ERROR
+// ==========================================================
 
 const formatImportError = (item) => {
   if (typeof item === "string") {
@@ -19,28 +29,49 @@ const formatImportError = (item) => {
     return String(item ?? "");
   }
 
+  if (item.reason) {
+    return `Row ${item.row ?? "?"}: ${
+      item.questionText || "Question"
+    } — ${item.reason}`;
+  }
+
   if (item.message) {
     return typeof item.message === "string"
       ? item.message
       : JSON.stringify(item.message);
   }
 
-  if (item.reason) {
-    return `${item.questionText || "Question"}: ${item.reason}`;
-  }
-
   return JSON.stringify(item);
 };
 
+// ==========================================================
+// COMPONENT
+// ==========================================================
+
 const AdminQuestionImport = () => {
   const navigate = useNavigate();
-  const { success, error: toastError } = useToast();
-  const { run, pending } = useAsyncAction();
 
-  useDocumentTitle("Import Questions", "Xcel Academy");
+  const {
+    success,
+    error: toastError,
+  } = useToast();
+
+  const {
+    run,
+    pending,
+  } = useAsyncAction();
+
+  useDocumentTitle(
+    "Import Questions",
+    "Xcel Academy"
+  );
 
   const [jsonText, setJsonText] = useState("");
   const [result, setResult] = useState(null);
+
+  // ========================================================
+  // IMPORT
+  // ========================================================
 
   const handleImport = async (event) => {
   event.preventDefault();
@@ -75,53 +106,63 @@ const AdminQuestionImport = () => {
     return;
   }
 
-  const response = await run(() =>
-    api.post(endpoints.admin.questionsBulk, {
-      questions,
-    })
-  );
+  try {
+    const importResult = await run(() =>
+      api.post(endpoints.admin.questionsBulk, {
+        questions,
+      })
+    );
 
-  if (!response.ok) {
-    const errorMessage =
-  typeof response.error?.message === "string"
-    ? response.error.message
-    : "Failed to import questions.";
+    // useAsyncAction may return the API response directly
+    // or wrap it inside .data/.result.
+    const data =
+      importResult?.data ??
+      importResult?.result ??
+      importResult;
 
-toastError(errorMessage);
-    return;
+    setResult(data);
+
+    if (data?.failedCount > 0) {
+      toastError(
+        `Imported ${data.insertedCount ?? 0} of ${
+          questions.length
+        } questions. ${data.failedCount} failed.`
+      );
+    } else {
+      success(
+        data?.message ||
+          "Questions imported successfully."
+      );
+    }
+
+    // Only clear after a successful request.
+    setJsonText("");
+  } catch (error) {
+    console.error("Question import error:", error);
+
+    toastError(
+      error?.message ||
+        "Failed to import questions."
+    );
   }
-
-  // use response.data/result depending on your useAsyncAction shape
-  const importResult = response.data ?? response.result ?? response;
-
-  setResult(importResult);
-
-  setResult({
-  imported: 1,
-  failed: 0,
-  total: 1,
-  errors: [],
-});
-
-  setJsonText("");
-
-  const successMessage =
-  typeof response.result?.message === "string"
-    ? response.result.message
-    : "Questions imported successfully.";
-
-success(successMessage);
 };
+
+  // ========================================================
+  // RENDER
+  // ========================================================
 
   return (
     <div className="shell py-6 lg:py-8">
+
       <PageHeader
         title="Import Questions"
         description="Import multiple questions into the Xcel Academy question bank at once."
         action={
           <button
             type="button"
-            onClick={() => navigate("/admin/questions")}
+            onClick={() =>
+              navigate("/admin/questions")
+            }
             className="btn btn-outline"
           >
             Back to Questions
@@ -130,12 +171,18 @@ success(successMessage);
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        {/* IMPORT FORM */}
+
+        {/* ==================================================
+            IMPORT FORM
+        ================================================== */}
+
         <form
           onSubmit={handleImport}
           className="card card-pad"
         >
+
           <div className="flex items-center gap-3">
+
             <span className="grid size-10 place-items-center rounded-md bg-brand-50 text-brand-600">
               <UploadIcon className="size-5" />
             </span>
@@ -149,6 +196,7 @@ success(successMessage);
                 Paste your questions as JSON.
               </p>
             </div>
+
           </div>
 
           <label
@@ -162,10 +210,14 @@ success(successMessage);
             id="question-json"
             value={jsonText}
             onChange={(event) =>
-              setJsonText(event.target.value)
+              setJsonText(
+                event.target.value
+              )
             }
             placeholder={`[
   {
+    "subject": "English Language",
+    "topic": "Vocabulary",
     "questionText": "What is the capital of Nigeria?",
     "options": {
       "A": "Lagos",
@@ -174,6 +226,7 @@ success(successMessage);
       "D": "Ibadan"
     },
     "correctAnswer": "B",
+    "examType": "jamb",
     "marks": 1
   }
 ]`}
@@ -183,9 +236,13 @@ success(successMessage);
           />
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+
             <button
               type="submit"
-              disabled={pending || !jsonText.trim()}
+              disabled={
+                pending ||
+                !jsonText.trim()
+              }
               className="btn btn-primary"
             >
               {pending
@@ -196,29 +253,40 @@ success(successMessage);
             <button
               type="button"
               disabled={pending}
-              onClick={() => setJsonText("")}
+              onClick={() =>
+                setJsonText("")
+              }
               className="btn btn-outline"
             >
               Clear
             </button>
+
           </div>
         </form>
 
-        {/* INSTRUCTIONS */}
+        {/* ==================================================
+            INSTRUCTIONS
+        ================================================== */}
+
         <aside className="card card-pad h-fit lg:sticky lg:top-6">
+
           <h2 className="font-bold text-ink">
             JSON Format
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Each question should contain the question text,
-            four answer options, the correct answer and its
-            marks.
+            Each question should contain a
+            subject, topic, question text,
+            four answer options, correct answer,
+            exam type and marks.
           </p>
 
           <div className="mt-4 overflow-x-auto rounded-md bg-surface-2 p-4">
+
             <pre className="text-xs leading-5 text-ink">
 {`{
+  "subject": "English Language",
+  "topic": "Vocabulary",
   "questionText": "...",
   "options": {
     "A": "...",
@@ -227,21 +295,28 @@ success(successMessage);
     "D": "..."
   },
   "correctAnswer": "B",
+  "examType": "jamb",
   "marks": 1
 }`}
             </pre>
+
           </div>
 
           <div className="mt-5 rounded-md bg-info-soft p-4 text-sm leading-6 text-info">
-            Make sure every question follows the format
-            expected by the server before importing.
+            Make sure every question has a
+            valid subject, topic and examType
+            before importing.
           </div>
+
         </aside>
+
       </div>
 
-      {/* IMPORT RESULT */}
-            {/* IMPORT RESULT */}
-{result && (
+      {/* ====================================================
+          IMPORT RESULT
+      ==================================================== */}
+
+      {result && (
   <div className="card card-pad mt-6">
     <h2 className="font-bold text-ink">
       Import Result
@@ -250,78 +325,88 @@ success(successMessage);
     <div className="mt-4 grid gap-3 sm:grid-cols-3">
       <ResultItem
         label="Imported"
-        value={
-          result.imported ??
-          result.created ??
-          result.count ??
-          0
-        }
+        value={result.insertedCount ?? 0}
       />
 
       <ResultItem
         label="Failed"
-        value={
-          result.failed ??
-          (Array.isArray(result.errors)
-            ? result.errors.length
-            : 0)
-        }
+        value={result.failedCount ?? 0}
       />
 
       <ResultItem
         label="Total"
         value={
-          result.total ??
-          result.processed ??
-          0
+          (result.insertedCount ?? 0) +
+          (result.failedCount ?? 0)
         }
       />
     </div>
 
-    {Array.isArray(result.errors) &&
-      result.errors.length > 0 && (
+    {Array.isArray(result.failed) &&
+      result.failed.length > 0 && (
         <div className="mt-5">
           <h3 className="font-semibold text-danger">
             Import Errors
           </h3>
 
           <div className="mt-3 space-y-2">
-            {result.errors.map((item, index) => (
-  <div
-    key={index}
-    className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
-  >
-    {formatImportError(item)}
-  </div>
-))}
+            {result.failed.map((item, index) => (
+              <div
+                key={index}
+                className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
+              >
+                {formatImportError(item)}
+              </div>
+            ))}
           </div>
         </div>
       )}
   </div>
 )}
 
+      {/* ====================================================
+          EMPTY STATE
+      ==================================================== */}
+
       {!result && (
         <div className="mt-6">
+
           <div className="card">
+
             <EmptyState
               icon={UploadIcon}
               title="Ready to import"
               description="Paste your question JSON above and import it into the question bank."
             />
+
           </div>
+
         </div>
       )}
+
     </div>
   );
 };
 
-const ResultItem = ({ label, value }) => {
+// ==========================================================
+// RESULT ITEM
+// ==========================================================
+
+const ResultItem = ({
+  label,
+  value,
+}) => {
   return (
     <div className="rounded-md bg-surface-2 p-4">
-      <p className="text-sm text-muted">{label}</p>
+
+      <p className="text-sm text-muted">
+        {label}
+      </p>
+
       <p className="mt-1 text-2xl font-bold text-ink">
         {value}
       </p>
+
     </div>
   );
 };
