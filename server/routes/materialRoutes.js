@@ -2,8 +2,12 @@ const express = require("express");
 
 const {
   createMaterial,
+  getMaterials,
   getMaterialsAdmin,
-  getPublishedMaterials,
+  getMaterialById,
+  getMaterialAdminById,
+  updateMaterial,
+  deleteMaterial,
 } = require("../controllers/studyMaterialController");
 
 const {
@@ -24,11 +28,32 @@ router.get(
   getMaterialsAdmin
 );
 
+router.get(
+  "/admin/:id",
+  protect,
+  adminOnly,
+  getMaterialAdminById
+);
+
 router.post(
   "/",
   protect,
   adminOnly,
   createMaterial
+);
+
+router.put(
+  "/:id",
+  protect,
+  adminOnly,
+  updateMaterial
+);
+
+router.delete(
+  "/:id",
+  protect,
+  adminOnly,
+  deleteMaterial
 );
 
 // ==========================================
@@ -39,6 +64,12 @@ router.get(
   "/",
   protect,
   getMaterials
+);
+
+router.get(
+  "/:id",
+  protect,
+  getMaterialById
 );
 
 module.exports = router;
