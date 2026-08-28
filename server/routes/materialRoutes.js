@@ -4,10 +4,7 @@ const {
   createMaterial,
   getMaterials,
   getMaterialsAdmin,
-  getMaterialById,
-  getMaterialAdminById,
-  updateMaterial,
-  deleteMaterial,
+  
 } = require("../controllers/studyMaterialController");
 
 const {
@@ -28,13 +25,6 @@ router.get(
   getMaterialsAdmin
 );
 
-router.get(
-  "/admin/:id",
-  protect,
-  adminOnly,
-  getMaterialAdminById
-);
-
 router.post(
   "/",
   protect,
@@ -42,19 +32,7 @@ router.post(
   createMaterial
 );
 
-router.put(
-  "/:id",
-  protect,
-  adminOnly,
-  updateMaterial
-);
 
-router.delete(
-  "/:id",
-  protect,
-  adminOnly,
-  deleteMaterial
-);
 
 // ==========================================
 // STUDENTS
@@ -66,10 +44,5 @@ router.get(
   getMaterials
 );
 
-router.get(
-  "/:id",
-  protect,
-  getMaterialById
-);
 
 module.exports = router;
