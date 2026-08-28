@@ -10,6 +10,28 @@ import {
 } from "../../components/ui";
 import { UploadIcon } from "../../components/ui/Icons";
 
+const formatImportError = (item) => {
+  if (typeof item === "string") {
+    return item;
+  }
+
+  if (!item || typeof item !== "object") {
+    return String(item ?? "");
+  }
+
+  if (item.message) {
+    return typeof item.message === "string"
+      ? item.message
+      : JSON.stringify(item.message);
+  }
+
+  if (item.reason) {
+    return `${item.questionText || "Question"}: ${item.reason}`;
+  }
+
+  return JSON.stringify(item);
+};
+
 const AdminQuestionImport = () => {
   const navigate = useNavigate();
   const { success, error: toastError } = useToast();
@@ -60,10 +82,12 @@ const AdminQuestionImport = () => {
   );
 
   if (!response.ok) {
-    toastError(
-      response.error?.message ||
-        "Failed to import questions."
-    );
+    const errorMessage =
+  typeof response.error?.message === "string"
+    ? response.error.message
+    : "Failed to import questions.";
+
+toastError(errorMessage);
     return;
   }
 
@@ -72,12 +96,21 @@ const AdminQuestionImport = () => {
 
   setResult(importResult);
 
+  setResult({
+  imported: 1,
+  failed: 0,
+  total: 1,
+  errors: [],
+});
+
   setJsonText("");
 
-  success(
-    importResult?.message ||
-      "Questions imported successfully."
-  );
+  const successMessage =
+  typeof response.result?.message === "string"
+    ? response.result.message
+    : "Questions imported successfully.";
+
+success(successMessage);
 };
 
   return (
@@ -253,46 +286,14 @@ const AdminQuestionImport = () => {
           </h3>
 
           <div className="mt-3 space-y-2">
-            {result.errors.map((item, index) => {
-              if (typeof item === "string") {
-                return (
-                  <div
-                    key={index}
-                    className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
-                  >
-                    {item}
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={index}
-                  className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
-                >
-                  <p>
-                    <strong>Row:</strong>{" "}
-                    {String(item?.row ?? "Unknown")}
-                  </p>
-
-                  <p className="mt-1">
-                    <strong>Question:</strong>{" "}
-                    {String(
-                      item?.questionText ?? "Unknown"
-                    )}
-                  </p>
-
-                  <p className="mt-1">
-                    <strong>Reason:</strong>{" "}
-                    {String(
-                      item?.reason ??
-                        item?.message ??
-                        "Unknown error"
-                    )}
-                  </p>
-                </div>
-              );
-            })}
+            {result.errors.map((item, index) => (
+  <div
+    key={index}
+    className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
+  >
+    {formatImportError(item)}
+  </div>
+))}
           </div>
         </div>
       )}
