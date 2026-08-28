@@ -29,40 +29,52 @@ const AdminMaterials = () => {
   // FETCH MATERIALS
   // ==========================================
 
-  const fetchMaterials = async () => {
-    try {
-      setLoading(true);
-      setError("");
+ const fetchMaterials = async () => {
+  try {
+    setLoading(true);
+    setError("");
 
-      const response = await fetch(
-        `${API_URL}/materials`
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to load materials."
-        );
-      }
-
-      setMaterials(data.materials || []);
-    } catch (error) {
-      console.error(
-        "Fetch materials error:",
-        error
-      );
-
-      setError(error.message);
-    } finally {
-      setLoading(false);
+    if (!token) {
+      throw new Error("You are not authenticated.");
     }
-  };
+
+    const response = await fetch(
+      `${API_URL}/materials/admin`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to load materials."
+      );
+    }
+
+    setMaterials(data.materials || []);
+  } catch (error) {
+    console.error(
+      "Fetch materials error:",
+      error
+    );
+
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
+  if (token) {
     fetchMaterials();
-  }, []);
+  }
+}, [token]);
 
   // ==========================================
   // FORM CHANGE
