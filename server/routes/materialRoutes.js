@@ -38,7 +38,7 @@ router.post(
 router.get(
   "/",
   protect,
-  getPublishedMaterials
+  getMaterials
 );
 
 module.exports = router;
