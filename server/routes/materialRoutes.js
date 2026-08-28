@@ -1,15 +1,44 @@
 const express = require("express");
 
 const {
-  getMaterials,
-  getMaterialById,
-} = require("../controllers/studyMaterialController");
+  createMaterial,
+  getMaterialsAdmin,
+  getPublishedMaterials,
+} = require("../controllers/materialController");
+
+const {
+  protect,
+  adminOnly,
+} = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Published notes are public so they can be found and
-// shared. Drafts are only visible under /api/admin.
-router.get("/", getMaterials);
-router.get("/:id", getMaterialById);
+// ==========================================
+// ADMIN
+// ==========================================
+
+router.get(
+  "/admin",
+  protect,
+  adminOnly,
+  getMaterialsAdmin
+);
+
+router.post(
+  "/",
+  protect,
+  adminOnly,
+  createMaterial
+);
+
+// ==========================================
+// STUDENTS
+// ==========================================
+
+router.get(
+  "/",
+  protect,
+  getPublishedMaterials
+);
 
 module.exports = router;
