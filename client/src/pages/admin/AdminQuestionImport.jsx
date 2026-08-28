@@ -21,61 +21,64 @@ const AdminQuestionImport = () => {
   const [result, setResult] = useState(null);
 
   const handleImport = async (event) => {
-    event.preventDefault();
+  event.preventDefault();
 
-    if (!jsonText.trim()) {
-      toastError("Paste your question data before importing.");
-      return;
-    }
+  if (!jsonText.trim()) {
+    toastError("Paste your question data before importing.");
+    return;
+  }
 
-    let questions;
+  let questions;
 
-    try {
-      const parsed = JSON.parse(jsonText);
+  try {
+    const parsed = JSON.parse(jsonText);
 
-      questions = Array.isArray(parsed)
-        ? parsed
-        : parsed.questions;
+    questions = Array.isArray(parsed)
+      ? parsed
+      : parsed.questions;
 
-      if (!Array.isArray(questions)) {
-        throw new Error(
-          "The JSON must be an array or contain a questions array."
-        );
-      }
-
-      if (questions.length === 0) {
-        throw new Error("No questions were found.");
-      }
-    } catch (parseError) {
-      toastError(
-        parseError.message || "Invalid JSON format."
+    if (!Array.isArray(questions)) {
+      throw new Error(
+        "The JSON must be an array or contain a questions array."
       );
-      return;
     }
 
-    const response = await run(() =>
-      api.post(endpoints.admin.questionsBulk, {
-        questions,
-      })
-    );
-
-    if (!response.ok) {
-      toastError(
-        response.error?.message ||
-          "Failed to import questions."
-      );
-      return;
+    if (questions.length === 0) {
+      throw new Error("No questions were found.");
     }
-
-    setResult(response.result);
-
-    setJsonText("");
-
-    success(
-      response.result?.message ||
-        "Questions imported successfully."
+  } catch (parseError) {
+    toastError(
+      parseError.message || "Invalid JSON format."
     );
-  };
+    return;
+  }
+
+  const response = await run(() =>
+    api.post(endpoints.admin.questionsBulk, {
+      questions,
+    })
+  );
+
+  if (!response.ok) {
+    toastError(
+      response.error?.message ||
+        "Failed to import questions."
+    );
+    return;
+  }
+
+  // use response.data/result depending on your useAsyncAction shape
+  const importResult = response.data ?? response.result ?? response;
+
+  setResult(importResult);
+
+  setJsonText("");
+
+  success(
+    importResult?.message ||
+      "Questions imported successfully."
+  );
+};
 
   return (
     <div className="shell py-6 lg:py-8">
@@ -204,66 +207,97 @@ const AdminQuestionImport = () => {
       </div>
 
       {/* IMPORT RESULT */}
-      {result && (
-        <div className="card card-pad mt-6">
-          <h2 className="font-bold text-ink">
-            Import Result
-          </h2>
+            {/* IMPORT RESULT */}
+{result && (
+  <div className="card card-pad mt-6">
+    <h2 className="font-bold text-ink">
+      Import Result
+    </h2>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <ResultItem
-              label="Imported"
-              value={
-                result.imported ??
-                result.created ??
-                result.count ??
-                0
+    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <ResultItem
+        label="Imported"
+        value={
+          result.imported ??
+          result.created ??
+          result.count ??
+          0
+        }
+      />
+
+      <ResultItem
+        label="Failed"
+        value={
+          result.failed ??
+          (Array.isArray(result.errors)
+            ? result.errors.length
+            : 0)
+        }
+      />
+
+      <ResultItem
+        label="Total"
+        value={
+          result.total ??
+          result.processed ??
+          0
+        }
+      />
+    </div>
+
+    {Array.isArray(result.errors) &&
+      result.errors.length > 0 && (
+        <div className="mt-5">
+          <h3 className="font-semibold text-danger">
+            Import Errors
+          </h3>
+
+          <div className="mt-3 space-y-2">
+            {result.errors.map((item, index) => {
+              if (typeof item === "string") {
+                return (
+                  <div
+                    key={index}
+                    className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
+                  >
+                    {item}
+                  </div>
+                );
               }
-            />
 
-            <ResultItem
-              label="Failed"
-              value={
-                result.failed ??
-                result.errors?.length ??
-                0
-              }
-            />
+              return (
+                <div
+                  key={index}
+                  className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
+                >
+                  <p>
+                    <strong>Row:</strong>{" "}
+                    {String(item?.row ?? "Unknown")}
+                  </p>
 
-            <ResultItem
-              label="Total"
-              value={
-                result.total ??
-                result.processed ??
-                0
-              }
-            />
-          </div>
+                  <p className="mt-1">
+                    <strong>Question:</strong>{" "}
+                    {String(
+                      item?.questionText ?? "Unknown"
+                    )}
+                  </p>
 
-          {Array.isArray(result.errors) &&
-            result.errors.length > 0 && (
-              <div className="mt-5">
-                <h3 className="font-semibold text-danger">
-                  Import Errors
-                </h3>
-
-                <div className="mt-3 space-y-2">
-                  {result.errors.map((item, index) => (
-                    <div
-                      key={index}
-                      className="rounded-md bg-danger-soft px-4 py-3 text-sm text-danger"
-                    >
-                      {typeof item === "string"
-                        ? item
-                        : item.message ||
-                          JSON.stringify(item)}
-                    </div>
-                  ))}
+                  <p className="mt-1">
+                    <strong>Reason:</strong>{" "}
+                    {String(
+                      item?.reason ??
+                        item?.message ??
+                        "Unknown error"
+                    )}
+                  </p>
                 </div>
-              </div>
-            )}
+              );
+            })}
+          </div>
         </div>
       )}
+  </div>
+)}
 
       {!result && (
         <div className="mt-6">
