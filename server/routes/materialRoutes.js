@@ -4,7 +4,7 @@ const {
   createMaterial,
   getMaterialsAdmin,
   getPublishedMaterials,
-} = require("../controllers/materialController");
+} = require("../controllers/studyMaterialController");
 
 const {
   protect,
