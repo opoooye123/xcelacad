@@ -56,8 +56,7 @@ router.delete(
 );
 
 // STUDENT
-router.get("/", protect, getMaterials);
-
-router.get("/:id", protect, getMaterialById);
-
+// STUDENT / PUBLIC
+router.get("/", getMaterials);
+router.get("/:id", getMaterialById);
 module.exports = router;
