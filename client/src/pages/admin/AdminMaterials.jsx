@@ -16,6 +16,10 @@ const AdminMaterials = () => {
 
   const [editingId, setEditingId] = useState(null);
 
+  const [subjects, setSubjects] = useState([]);
+const [topics, setTopics] = useState([]);
+const [loadingSubjects, setLoadingSubjects] = useState(true);
+const [loadingTopics, setLoadingTopics] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -41,10 +45,8 @@ const AdminMaterials = () => {
     const response = await fetch(
       `${API_URL}/materials/admin`,
       {
-        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
       }
     );
@@ -70,6 +72,71 @@ const AdminMaterials = () => {
   }
 };
 
+const fetchSubjects = async () => {
+  try {
+    setLoadingSubjects(true);
+
+    const response = await fetch(
+      `${API_URL}/subjects`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to load subjects."
+      );
+    }
+
+    setSubjects(data.subjects || []);
+  } catch (error) {
+    console.error(
+      "Fetch subjects error:",
+      error
+    );
+
+    setError(error.message);
+  } finally {
+    setLoadingSubjects(false);
+  }
+};
+const fetchTopics = async (subjectId) => {
+  if (!subjectId) {
+    setTopics([]);
+    return;
+  }
+
+  try {
+    setLoadingTopics(true);
+
+    const response = await fetch(
+      `${API_URL}/topics?subject=${subjectId}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to load topics."
+      );
+    }
+
+    setTopics(data.topics || []);
+  } catch (error) {
+    console.error(
+      "Fetch topics error:",
+      error
+    );
+
+    setError(error.message);
+  } finally {
+    setLoadingTopics(false);
+  }
+};
+useEffect(() => {
+  fetchSubjects();
+}, []);
+
   useEffect(() => {
   if (token) {
     fetchMaterials();
@@ -81,17 +148,27 @@ const AdminMaterials = () => {
   // ==========================================
 
   const handleChange = (event) => {
-    const { name, value, type, checked } =
-      event.target;
+  const { name, value, type, checked } =
+    event.target;
 
+  setForm((previous) => ({
+    ...previous,
+    [name]:
+      type === "checkbox"
+        ? checked
+        : value,
+  }));
+
+  if (name === "subject") {
     setForm((previous) => ({
       ...previous,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
+      subject: value,
+      topic: "",
     }));
-  };
+
+    fetchTopics(value);
+  }
+};
 
   // ==========================================
   // CREATE / UPDATE
@@ -474,16 +551,30 @@ const AdminMaterials = () => {
                 Subject
               </label>
 
-              <input
-                id="subject"
-                name="subject"
-                type="text"
-                value={form.subject}
-                onChange={handleChange}
-                placeholder="Subject ID"
-                className="input mt-2 w-full"
-                disabled={saving}
-              />
+              <select
+  id="subject"
+  name="subject"
+  value={form.subject}
+  onChange={handleChange}
+  className="input mt-2 w-full"
+  disabled={saving || loadingSubjects}
+  required
+>
+  <option value="">
+    {loadingSubjects
+      ? "Loading subjects..."
+      : "Select subject"}
+  </option>
+
+  {subjects.map((subject) => (
+    <option
+      key={subject._id}
+      value={subject._id}
+    >
+      {subject.name}
+    </option>
+  ))}
+</select>
             </div>
 
             <div>
@@ -494,16 +585,37 @@ const AdminMaterials = () => {
                 Topic
               </label>
 
-              <input
-                id="topic"
-                name="topic"
-                type="text"
-                value={form.topic}
-                onChange={handleChange}
-                placeholder="Topic ID"
-                className="input mt-2 w-full"
-                disabled={saving}
-              />
+             <select
+  id="topic"
+  name="topic"
+  value={form.topic}
+  onChange={handleChange}
+  className="input mt-2 w-full"
+  disabled={
+    saving ||
+    loadingTopics ||
+    !form.subject
+  }
+>
+  <option value="">
+    {!form.subject
+      ? "Select a subject first"
+      : loadingTopics
+      ? "Loading topics..."
+      : topics.length === 0
+      ? "No topics available"
+      : "Select topic"}
+  </option>
+
+  {topics.map((topic) => (
+    <option
+      key={topic._id}
+      value={topic._id}
+    >
+      {topic.title}
+    </option>
+  ))}
+</select>
             </div>
           </div>
 
