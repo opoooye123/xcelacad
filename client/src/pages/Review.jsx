@@ -256,7 +256,7 @@ const Review = () => {
 
             <button
   type="button"
-  onClick={() => navigate("/dashboard")}
+  onClick={() => useNavigate("/dashboard")}
   className="btn btn-outline"
   disabled={answering}
 >
