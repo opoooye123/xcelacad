@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
 import {
   useApiData,
   useAsyncAction,
@@ -256,13 +255,13 @@ const Review = () => {
             </div>
 
             <button
-              type="button"
-              onClick={closeReview}
-              className="btn btn-outline"
-              disabled={answering}
-            >
-              Exit
-            </button>
+  type="button"
+  onClick={() => navigate("/dashboard")}
+  className="btn btn-outline"
+  disabled={answering}
+>
+  Exit
+</button>
           </div>
 
           {/* Question info */}
