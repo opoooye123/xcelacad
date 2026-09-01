@@ -77,7 +77,7 @@ const formatNextReview = (date) => {
 // ==========================================================
 // MAIN PAGE
 // ==========================================================
-
+const navigate = useNavigate();
 const Review = () => {
   const [activeItem, setActiveItem] = useState(null);
   const [selectedAnswer, setSelectedAnswer] =
@@ -256,7 +256,7 @@ const Review = () => {
 
             <button
   type="button"
-  onClick={() => useNavigate("/dashboard")}
+  onClick={() => navigate("/dashboard")}
   className="btn btn-outline"
   disabled={answering}
 >
