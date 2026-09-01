@@ -14,6 +14,14 @@ const ExamResult = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Smart Review summary for the post-exam experience.
+  // This is intentionally non-blocking: if the review
+  // endpoint is temporarily unavailable, the exam result
+  // page should still work normally.
+  const [reviewStats, setReviewStats] = useState(null);
+  const [reviewStatsLoading, setReviewStatsLoading] =
+    useState(true);
+
   // ==========================================
   // LOAD RESULT
   // ==========================================
@@ -28,6 +36,63 @@ const ExamResult = () => {
 
     loadResult();
   }, [id, token, authLoading]);
+
+  // ==========================================
+  // LOAD SMART REVIEW SUMMARY
+  // ==========================================
+
+  useEffect(() => {
+    if (authLoading || !token) return;
+
+    let active = true;
+
+    const loadReviewStats = async () => {
+      try {
+        setReviewStatsLoading(true);
+
+        const response = await fetch(
+          `${API_URL}/reviews/stats`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to load Smart Review stats"
+          );
+        }
+
+        if (active) {
+          setReviewStats(data);
+        }
+      } catch (reviewError) {
+        // Smart Review is an enhancement to the result page.
+        // Never replace a valid exam result with a review error.
+        console.warn(
+          "Could not load Smart Review stats:",
+          reviewError
+        );
+      } finally {
+        if (active) {
+          setReviewStatsLoading(false);
+        }
+      }
+    };
+
+    loadReviewStats();
+
+    return () => {
+      active = false;
+    };
+  }, [token, authLoading]);
 
   const loadResult = async () => {
     try {
@@ -573,6 +638,68 @@ const fetchFullResult = async () => {
             </div>
           </div>
         </div>
+
+        {/* =====================================
+            SMART REVIEW
+        ====================================== */}
+
+        {!reviewStatsLoading &&
+          reviewStats &&
+          Number(reviewStats.review || 0) > 0 && (
+            <div style={styles.smartReviewCard}>
+              <div style={styles.smartReviewIcon}>
+                🧠
+              </div>
+
+              <div style={styles.smartReviewContent}>
+                <div style={styles.smartReviewHeader}>
+                  <div>
+                    <p style={styles.smartReviewEyebrow}>
+                      SMART REVIEW
+                    </p>
+
+                    <h2 style={styles.smartReviewTitle}>
+                      Keep improving
+                    </h2>
+                  </div>
+
+                  <div style={styles.smartReviewCount}>
+                    {reviewStats.review}
+                  </div>
+                </div>
+
+                <p style={styles.smartReviewText}>
+                  {reviewStats.review} question
+                  {Number(reviewStats.review) === 1
+                    ? ""
+                    : "s"} from your practice need
+                  another look.
+                  {Number(
+                    reviewStats.almostMastered || 0
+                  ) > 0 &&
+                    ` ${reviewStats.almostMastered} ${
+                      Number(
+                        reviewStats.almostMastered
+                      ) === 1
+                        ? "question is"
+                        : "questions are"
+                    } almost mastered.`}
+                </p>
+
+                <div style={styles.smartReviewActions}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate("/review")
+                    }
+                    style={styles.smartReviewButton}
+                  >
+                    Review now →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* =====================================
             EXAM INFORMATION
@@ -1298,6 +1425,92 @@ const styles = {
 
   mutedText: {
     color: "#64748b",
+  },
+
+  smartReviewCard: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "16px",
+    background: "#eff6ff",
+    border: "1px solid #bfdbfe",
+    borderRadius: "14px",
+    padding: "20px",
+    marginBottom: "20px",
+  },
+
+  smartReviewIcon: {
+    width: "46px",
+    height: "46px",
+    borderRadius: "12px",
+    background: "#dbeafe",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "23px",
+    flexShrink: 0,
+  },
+
+  smartReviewContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  smartReviewHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "15px",
+  },
+
+  smartReviewEyebrow: {
+    margin: 0,
+    color: "#2563eb",
+    fontSize: "11px",
+    fontWeight: "800",
+    letterSpacing: "1.5px",
+  },
+
+  smartReviewTitle: {
+    margin: "4px 0 0",
+    color: "#111827",
+    fontSize: "20px",
+    fontWeight: "800",
+  },
+
+  smartReviewCount: {
+    minWidth: "42px",
+    height: "42px",
+    padding: "0 10px",
+    borderRadius: "50%",
+    background: "#2563eb",
+    color: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "16px",
+    fontWeight: "800",
+    flexShrink: 0,
+  },
+
+  smartReviewText: {
+    margin: "8px 0 0",
+    color: "#334155",
+    lineHeight: "1.6",
+    fontSize: "14px",
+  },
+
+  smartReviewActions: {
+    marginTop: "15px",
+  },
+
+  smartReviewButton: {
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "700",
+    background: "#2563eb",
+    color: "#ffffff",
   },
 
   bottomActions: {
