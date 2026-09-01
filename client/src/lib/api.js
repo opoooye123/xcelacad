@@ -249,6 +249,11 @@ export const endpoints = {
     list: "/materials",
     detail: (id) => `/materials/${id}`,
   },
+  reviews: {
+  list: "/reviews",
+  stats: "/reviews/stats",
+  answer: (id) => `/reviews/${id}/answer`,
+},
 
   users: {
     profile: "/users/profile",

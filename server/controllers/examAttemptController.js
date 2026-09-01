@@ -1,5 +1,6 @@
 const Exam = require("../models/Exam");
 const ExamAttempt = require("../models/ExamAttempt");
+const ReviewItem = require("../models/ReviewItem");
 
 const { ANSWER_KEYS } = require("../config/constants");
 
@@ -25,9 +26,8 @@ const startExam = async (req, res) => {
       });
     }
 
-    // Practice sessions are never published — they are
-    // generated for one student — so ownership stands
-    // in for publication here.
+    // Practice sessions are never published.
+    // Ownership stands in for publication here.
     const isOwnPractice =
       exam.isPractice &&
       String(exam.createdBy) === String(req.user._id);
@@ -119,7 +119,7 @@ const startExam = async (req, res) => {
   } catch (error) {
     console.error("Start exam error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error",
     });
   }
@@ -221,10 +221,136 @@ const saveAnswer = async (req, res) => {
   } catch (error) {
     console.error("Save answer error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error",
     });
   }
+};
+
+// ==========================================
+// SMART REVIEW
+// ==========================================
+
+const updateReviewItem = async ({
+  studentId,
+  question,
+  isCorrect,
+  now,
+}) => {
+  let reviewItem = await ReviewItem.findOne({
+    student: studentId,
+    question: question._id,
+  });
+
+  // ==========================================
+  // CORRECT ANSWER
+  // ==========================================
+
+  if (isCorrect) {
+    // If this question was never a weakness,
+    // there is nothing to update.
+    if (!reviewItem) {
+      return;
+    }
+
+    reviewItem.correctCount += 1;
+    reviewItem.consecutiveCorrect += 1;
+
+    reviewItem.lastAnsweredAt = now;
+    reviewItem.lastReviewedAt = now;
+
+    // Correct answers reduce the priority.
+    reviewItem.priority = Math.max(
+      0,
+      reviewItem.priority - 2
+    );
+
+    // ------------------------------------------
+    // REVIEW PROGRESSION
+    // ------------------------------------------
+
+    if (reviewItem.consecutiveCorrect >= 3) {
+      reviewItem.status = "mastered";
+
+      reviewItem.nextReviewAt = new Date(
+        now.getTime() +
+          30 * 24 * 60 * 60 * 1000
+      );
+    } else if (
+      reviewItem.consecutiveCorrect >= 2
+    ) {
+      reviewItem.status = "almost-mastered";
+
+      reviewItem.nextReviewAt = new Date(
+        now.getTime() +
+          7 * 24 * 60 * 60 * 1000
+      );
+    } else {
+      reviewItem.status = "review";
+
+      reviewItem.nextReviewAt = new Date(
+        now.getTime() +
+          3 * 24 * 60 * 60 * 1000
+      );
+    }
+
+    await reviewItem.save();
+
+    return;
+  }
+
+  // ==========================================
+  // WRONG ANSWER
+  // ==========================================
+
+  if (!reviewItem) {
+    reviewItem = new ReviewItem({
+      student: studentId,
+      question: question._id,
+
+      wrongCount: 1,
+      correctCount: 0,
+
+      priority: 5,
+
+      status: "review",
+
+      consecutiveCorrect: 0,
+
+      lastAnsweredAt: now,
+      lastReviewedAt: now,
+
+      nextReviewAt: now,
+    });
+  } else {
+    reviewItem.wrongCount += 1;
+
+    // A wrong answer breaks the correct streak.
+    reviewItem.consecutiveCorrect = 0;
+
+    reviewItem.lastAnsweredAt = now;
+    reviewItem.lastReviewedAt = now;
+
+    // Increase review priority.
+    reviewItem.priority = Math.min(
+      10,
+      reviewItem.priority + 2
+    );
+
+    reviewItem.status = "review";
+
+    // Difficult questions come back sooner.
+    const reviewDelay =
+      reviewItem.priority >= 8
+        ? 24 * 60 * 60 * 1000
+        : 3 * 24 * 60 * 60 * 1000;
+
+    reviewItem.nextReviewAt = new Date(
+      now.getTime() + reviewDelay
+    );
+  }
+
+  await reviewItem.save();
 };
 
 // ==========================================
@@ -235,7 +361,10 @@ const submitExam = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get attempt belonging to logged-in student
+    // ==========================================
+    // GET STUDENT ATTEMPT
+    // ==========================================
+
     const attempt = await ExamAttempt.findOne({
       _id: id,
       student: req.user._id,
@@ -282,6 +411,8 @@ const submitExam = async (req, res) => {
 
     let score = 0;
 
+    const reviewUpdates = [];
+
     for (const answer of attempt.answers) {
       const question =
         attempt.exam.questions.find(
@@ -294,16 +425,28 @@ const submitExam = async (req, res) => {
         continue;
       }
 
-      if (
+      const isCorrect =
         answer.selectedAnswer ===
-        question.correctAnswer
-      ) {
+        question.correctAnswer;
+
+      if (isCorrect) {
         score += question.marks;
       }
+
+      // Don't await this yet.
+      // We want the exam result saved first.
+      reviewUpdates.push(
+        updateReviewItem({
+          studentId: req.user._id,
+          question,
+          isCorrect,
+          now,
+        })
+      );
     }
 
     // ==========================================
-    // SAVE RESULT
+    // SAVE EXAM RESULT FIRST
     // ==========================================
 
     attempt.score = score;
@@ -311,9 +454,27 @@ const submitExam = async (req, res) => {
 
     await attempt.save();
 
+    // ==========================================
+    // UPDATE SMART REVIEW
+    // ==========================================
+    // Smart Review must never prevent an exam
+    // result from being saved.
+
+    try {
+      await Promise.all(reviewUpdates);
+    } catch (reviewError) {
+      console.error(
+        "Smart Review update error:",
+        reviewError
+      );
+    }
+
+    // ==========================================
+    // RESPONSE
+    // ==========================================
+
     return res.status(200).json({
-      message:
-        "Exam submitted successfully",
+      message: "Exam submitted successfully",
 
       result: {
         attemptId: attempt._id,
@@ -329,7 +490,7 @@ const submitExam = async (req, res) => {
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error",
     });
   }
@@ -386,7 +547,8 @@ const getAttempt = async (req, res) => {
           _id: attempt.exam._id,
           title: attempt.exam.title,
           duration: attempt.exam.duration,
-          totalMarks: attempt.exam.totalMarks,
+          totalMarks:
+            attempt.exam.totalMarks,
         },
 
         startedAt: attempt.startedAt,
@@ -397,11 +559,13 @@ const getAttempt = async (req, res) => {
         score: attempt.score,
         totalMarks: attempt.totalMarks,
 
-        questions: attempt.exam.questions,
+        questions:
+          attempt.exam.questions,
 
         answers: attempt.answers,
 
-        submittedAt: attempt.submittedAt,
+        submittedAt:
+          attempt.submittedAt,
       },
     });
   } catch (error) {
@@ -410,16 +574,20 @@ const getAttempt = async (req, res) => {
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error",
     });
   }
 };
 
+// ==========================================
+// GET EXAM RESULT
+// ==========================================
+
 const getExamResult = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const attempt = await ExamAttempt.findOne({
       _id: id,
       student: req.user._id,
@@ -450,12 +618,15 @@ const getExamResult = async (req, res) => {
       attempt.status !== "expired"
     ) {
       return res.status(400).json({
-        message: "This exam has not been submitted yet",
+        message:
+          "This exam has not been submitted yet",
         status: attempt.status,
       });
     }
 
-    const questions = attempt.exam?.questions || [];
+    const questions =
+      attempt.exam?.questions || [];
+
     const answers = attempt.answers || [];
 
     let correct = 0;
@@ -483,7 +654,8 @@ const getExamResult = async (req, res) => {
       if (!selectedAnswer) {
         unanswered++;
       } else if (
-        selectedAnswer === question.correctAnswer
+        selectedAnswer ===
+        question.correctAnswer
       ) {
         correct++;
       } else {
@@ -491,29 +663,34 @@ const getExamResult = async (req, res) => {
       }
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       result: {
         attemptId: attempt._id,
+
         status: attempt.status,
 
         exam: {
           _id: attempt.exam._id,
           title: attempt.exam.title,
-          description: attempt.exam.description,
+          description:
+            attempt.exam.description,
           examType: attempt.exam.examType,
           duration: attempt.exam.duration,
-          totalMarks: attempt.exam.totalMarks,
+          totalMarks:
+            attempt.exam.totalMarks,
         },
 
         score: attempt.score || 0,
-        totalMarks: attempt.totalMarks || 0,
+        totalMarks:
+          attempt.totalMarks || 0,
 
         correct,
         wrong,
         unanswered,
 
         startedAt: attempt.startedAt,
-        submittedAt: attempt.submittedAt,
+        submittedAt:
+          attempt.submittedAt,
 
         questions,
         answers,
@@ -525,60 +702,61 @@ const getExamResult = async (req, res) => {
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Server error",
     });
   }
 };
 
 // ==========================================
-// GET ACTIVE (UNFINISHED) ATTEMPTS
+// GET ACTIVE ATTEMPTS
 // ==========================================
-// The dashboard's "resume where you left off" card. History
-// deliberately excludes in-progress attempts, so without this
-// an interrupted exam would be invisible until it expired.
-//
-// An attempt whose clock has already run out is reported with
-// isExpired so the client offers "see result" instead of
-// "resume". It is not mutated here — a GET on a list should not
-// write, and getAttempt already expires it properly when the
-// student opens it.
 
-const getActiveAttempts = async (req, res) => {
+const getActiveAttempts = async (
+  req,
+  res
+) => {
   try {
-    const attempts = await ExamAttempt.find({
-      student: req.user._id,
-      status: "in-progress",
-    })
-      .populate({
-        path: "exam",
-        select:
-          "title examType duration totalMarks isPractice questions",
+    const attempts =
+      await ExamAttempt.find({
+        student: req.user._id,
+        status: "in-progress",
       })
-      .sort({ startedAt: -1 })
-      .lean();
+        .populate({
+          path: "exam",
+          select:
+            "title examType duration totalMarks isPractice questions",
+        })
+        .sort({ startedAt: -1 })
+        .lean();
 
     const now = Date.now();
 
     const active = attempts
-      // An attempt whose exam has since been deleted has
-      // nothing to resume into.
       .filter((attempt) => attempt.exam)
       .map((attempt) => {
         const endTime = new Date(
-          new Date(attempt.startedAt).getTime() +
-            attempt.exam.duration * 60 * 1000
+          new Date(
+            attempt.startedAt
+          ).getTime() +
+            attempt.exam.duration *
+              60 *
+              1000
         );
 
-        const answered = (attempt.answers || []).filter(
-          (answer) => answer.selectedAnswer != null
+        const answered = (
+          attempt.answers || []
+        ).filter(
+          (answer) =>
+            answer.selectedAnswer != null
         ).length;
 
-        const questionCount = Array.isArray(
-          attempt.exam.questions
-        )
-          ? attempt.exam.questions.length
-          : 0;
+        const questionCount =
+          Array.isArray(
+            attempt.exam.questions
+          )
+            ? attempt.exam.questions.length
+            : 0;
 
         return {
           attemptId: attempt._id,
@@ -586,10 +764,14 @@ const getActiveAttempts = async (req, res) => {
           exam: {
             _id: attempt.exam._id,
             title: attempt.exam.title,
-            examType: attempt.exam.examType,
-            duration: attempt.exam.duration,
-            totalMarks: attempt.exam.totalMarks,
-            isPractice: attempt.exam.isPractice,
+            examType:
+              attempt.exam.examType,
+            duration:
+              attempt.exam.duration,
+            totalMarks:
+              attempt.exam.totalMarks,
+            isPractice:
+              attempt.exam.isPractice,
           },
 
           startedAt: attempt.startedAt,
@@ -600,10 +782,14 @@ const getActiveAttempts = async (req, res) => {
 
           secondsRemaining: Math.max(
             0,
-            Math.round((endTime.getTime() - now) / 1000)
+            Math.round(
+              (endTime.getTime() - now) /
+                1000
+            )
           ),
 
-          isExpired: now >= endTime.getTime(),
+          isExpired:
+            now >= endTime.getTime(),
         };
       });
 
@@ -612,7 +798,10 @@ const getActiveAttempts = async (req, res) => {
       attempts: active,
     });
   } catch (error) {
-    console.error("Get active attempts error:", error);
+    console.error(
+      "Get active attempts error:",
+      error
+    );
 
     return res.status(500).json({
       message: "Server error",
@@ -624,42 +813,61 @@ const getActiveAttempts = async (req, res) => {
 // GET STUDENT EXAM HISTORY
 // ==========================================
 
-const getExamHistory = async (req, res) => {
+const getExamHistory = async (
+  req,
+  res
+) => {
   try {
-    const attempts = await ExamAttempt.find({
-      student: req.user._id,
-      status: {
-        $in: ["submitted", "expired"],
-      },
-    })
-      .populate({
-        path: "exam",
-        select:
-          "title description examType duration totalMarks isPractice",
+    const attempts =
+      await ExamAttempt.find({
+        student: req.user._id,
+        status: {
+          $in: [
+            "submitted",
+            "expired",
+          ],
+        },
       })
-      .sort({
-        submittedAt: -1,
-      });
+        .populate({
+          path: "exam",
+          select:
+            "title description examType duration totalMarks isPractice",
+        })
+        .sort({
+          submittedAt: -1,
+        });
 
-    const history = attempts.map((attempt) => ({
-      attemptId: attempt._id,
-      exam: attempt.exam,
-      score: attempt.score || 0,
-      totalMarks: attempt.totalMarks || 0,
-      status: attempt.status,
-      startedAt: attempt.startedAt,
-      submittedAt: attempt.submittedAt,
-      percentage:
-        attempt.totalMarks > 0
-          ? Number(
-              (
-                (attempt.score /
-                  attempt.totalMarks) *
-                100
-              ).toFixed(1)
-            )
-          : 0,
-    }));
+    const history = attempts.map(
+      (attempt) => ({
+        attemptId: attempt._id,
+
+        exam: attempt.exam,
+
+        score: attempt.score || 0,
+
+        totalMarks:
+          attempt.totalMarks || 0,
+
+        status: attempt.status,
+
+        startedAt:
+          attempt.startedAt,
+
+        submittedAt:
+          attempt.submittedAt,
+
+        percentage:
+          attempt.totalMarks > 0
+            ? Number(
+                (
+                  (attempt.score /
+                    attempt.totalMarks) *
+                  100
+                ).toFixed(1)
+              )
+            : 0,
+      })
+    );
 
     return res.status(200).json({
       history,
@@ -675,6 +883,7 @@ const getExamHistory = async (req, res) => {
     });
   }
 };
+
 module.exports = {
   startExam,
   saveAnswer,
@@ -682,5 +891,5 @@ module.exports = {
   getAttempt,
   getExamResult,
   getActiveAttempts,
-  getExamHistory
+  getExamHistory,
 };

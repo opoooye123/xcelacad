@@ -32,6 +32,7 @@ const settingsRoutes = require("./routes/settingsRoutes");
 
 const adminRoutes = require("./routes/adminRoute");
 
+const reviewRoutes = require("./routes/reviewRoutes");
 const app = express();
 
 connectDB();
@@ -93,7 +94,10 @@ app.use("/api/attempts", attemptRoutes);
 app.use("/api/practice", practiceRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
-
+app.use(
+  "/api/reviews",
+  reviewRoutes
+);
 // ==========================================
 // ADMIN API  (protect + adminOnly inside)
 // ==========================================

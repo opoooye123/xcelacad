@@ -15,7 +15,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import PublicLayout from "./layouts/PublicLayout";
 import StudentLayout from "./layouts/StudentLayout";
 import MaintenanceGate from "./components/MaintenanceGate";
-
+import Review from "./pages/Review";
 // ==========================================================
 // ROUTES
 // ==========================================================
@@ -130,6 +130,14 @@ const App = () => (
             element={<MaterialDetail />}
           />
         </Route>
+        <Route
+  path="/review"
+  element={
+    <ProtectedRoute>
+      <Review />
+    </ProtectedRoute>
+  }
+/>
 
         {/* ---------- Auth ---------- */}
         <Route
