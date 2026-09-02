@@ -1,5 +1,7 @@
 const School = require("../models/School");
 const SchoolMembership = require("../models/SchoolMembership");
+const SchoolClass = require("../models/SchoolClass");
+const TeacherAssignment = require("../models/TeacherAssignment");
 
 // ==========================================
 // CREATE SCHOOL
@@ -80,11 +82,12 @@ const createSchool = async (req, res) => {
 // ==========================================
 const getMySchools = async (req, res) => {
   try {
-   const memberships = await SchoolMembership.find({
-  user: req.user._id,
-})
+    const memberships = await SchoolMembership.find({
+      user: req.user._id,
+    })
       .populate("school", "name code logo isVerified isActive")
-      .populate("class", "name level section academicSession");
+      .populate("class", "name level section academicSession")
+      .sort({ createdAt: -1 });
 
     res.json({
       memberships,
@@ -191,8 +194,6 @@ const createSchoolClass = async (req, res) => {
       });
     }
 
-    const SchoolClass = require("../models/SchoolClass");
-
     const schoolClass = await SchoolClass.create({
       school: schoolId,
       name: name.trim(),
@@ -229,8 +230,6 @@ const getSchoolClasses = async (req, res) => {
   try {
     const { schoolId } = req.params;
 
-    const SchoolClass = require("../models/SchoolClass");
-
     const classes = await SchoolClass.find({
       school: schoolId,
       isActive: true,
@@ -257,8 +256,6 @@ const getSchoolClasses = async (req, res) => {
 const deactivateSchoolClass = async (req, res) => {
   try {
     const { schoolId, classId } = req.params;
-
-    const SchoolClass = require("../models/SchoolClass");
 
     const schoolClass = await SchoolClass.findOne({
       _id: classId,
@@ -287,44 +284,48 @@ const deactivateSchoolClass = async (req, res) => {
   }
 };
 
+// ==========================================
 // GET SCHOOL DASHBOARD
+// ==========================================
 const getSchoolDashboard = async (req, res) => {
   try {
     const { schoolId } = req.params;
 
-    const SchoolClass = require("../models/SchoolClass");
-    const TeacherAssignment = require("../models/TeacherAssignment");
+    const [
+      school,
+      membershipCount,
+      teacherCount,
+      studentCount,
+      classCount,
+    ] = await Promise.all([
+      School.findById(schoolId).select(
+        "name code logo isVerified isActive"
+      ),
 
-    const [school, membershipCount, teacherCount, studentCount, classCount] =
-      await Promise.all([
-        School.findById(schoolId).select(
-          "name code logo isVerified isActive"
-        ),
+      SchoolMembership.countDocuments({
+        school: schoolId,
+        isActive: true,
+      }),
 
-        SchoolMembership.countDocuments({
-          school: schoolId,
-          isActive: true,
-        }),
+      SchoolMembership.countDocuments({
+        school: schoolId,
+        role: {
+          $in: ["teacher", "principal", "school_admin"],
+        },
+        isActive: true,
+      }),
 
-        SchoolMembership.countDocuments({
-          school: schoolId,
-          role: {
-            $in: ["teacher", "principal", "school_admin"],
-          },
-          isActive: true,
-        }),
+      SchoolMembership.countDocuments({
+        school: schoolId,
+        role: "student",
+        isActive: true,
+      }),
 
-        SchoolMembership.countDocuments({
-          school: schoolId,
-          role: "student",
-          isActive: true,
-        }),
-
-        SchoolClass.countDocuments({
-          school: schoolId,
-          isActive: true,
-        }),
-      ]);
+      SchoolClass.countDocuments({
+        school: schoolId,
+        isActive: true,
+      }),
+    ]);
 
     if (!school) {
       return res.status(404).json({
@@ -356,7 +357,9 @@ const getSchoolDashboard = async (req, res) => {
   }
 };
 
-
+// ==========================================
+// EXPORTS
+// ==========================================
 module.exports = {
   createSchool,
   getMySchools,
@@ -365,5 +368,5 @@ module.exports = {
   createSchoolClass,
   getSchoolClasses,
   deactivateSchoolClass,
-  getSchoolDashboard
+  getSchoolDashboard,
 };
