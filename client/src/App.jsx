@@ -16,6 +16,12 @@ import PublicLayout from "./layouts/PublicLayout";
 import StudentLayout from "./layouts/StudentLayout";
 import MaintenanceGate from "./components/MaintenanceGate";
 import Review from "./pages/Review";
+import SchoolDashboard from "./pages/school/SchoolDashboard";
+import SchoolClasses from "./pages/school/SchoolClasses";
+import CreateSchool from "./pages/school/CreateSchool";
+
+
+
 // ==========================================================
 // ROUTES
 // ==========================================================
@@ -231,6 +237,23 @@ const App = () => (
         />
 
         <Route path="*" element={<NotFound />} />
+
+        {/* --------------- School ---------- */}
+
+        <Route
+  path="/school/:schoolId"
+  element={<SchoolDashboard />}
+/>
+
+<Route
+  path="/school/:schoolId/classes"
+  element={<SchoolClasses />}
+/>
+
+<Route
+  path="/school/create"
+  element={<CreateSchool />}
+/>
       </Routes>
     </Suspense>
   </MaintenanceGate>

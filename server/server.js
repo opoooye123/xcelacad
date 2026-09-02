@@ -33,6 +33,10 @@ const settingsRoutes = require("./routes/settingsRoutes");
 const adminRoutes = require("./routes/adminRoute");
 
 const reviewRoutes = require("./routes/reviewRoutes");
+const schoolRoutes = require("./routes/schoolRoutes");
+const schoolManagementRoutes = require("./routes/schoolManagementRoutes");
+
+
 const app = express();
 
 connectDB();
@@ -98,6 +102,8 @@ app.use(
   "/api/reviews",
   reviewRoutes
 );
+app.use("/api/schools", schoolRoutes);
+app.use("/api/schools", schoolManagementRoutes);
 // ==========================================
 // ADMIN API  (protect + adminOnly inside)
 // ==========================================

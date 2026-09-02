@@ -17,6 +17,8 @@ const examAdminRoutes = require("./admin/examAdminRoutes");
 const materialAdminRoutes = require("./admin/materialAdminRoutes");
 const userAdminRoutes = require("./admin/userAdminRoutes");
 const settingsAdminRoutes = require("./admin/settingsAdminRoutes");
+const schoolAdminRoutes = require("./admin/schoolRoutes");
+
 
 const router = express.Router();
 
@@ -37,5 +39,6 @@ router.use("/exams", examAdminRoutes);
 router.use("/materials", materialAdminRoutes);
 router.use("/users", userAdminRoutes);
 router.use("/settings", settingsAdminRoutes);
+router.use("/schools", schoolAdminRoutes);
 
 module.exports = router;
