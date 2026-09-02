@@ -20,7 +20,7 @@ import SchoolDashboard from "./pages/school/SchoolDashboard";
 import SchoolClasses from "./pages/school/SchoolClasses";
 import CreateSchool from "./pages/school/CreateSchool";
 import MySchool from "./pages/school/MySchool";
-
+import SchoolVerification from "./pages/admin/SchoolVerification";
 
 // ==========================================================
 // ROUTES
@@ -258,6 +258,11 @@ const App = () => (
 <Route
   path="/school/my"
   element={<MySchool />}
+/>
+
+<Route
+  path="/admin/schools/verification"
+  element={<SchoolVerification />}
 />
       </Routes>
     </Suspense>
