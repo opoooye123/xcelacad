@@ -7,7 +7,10 @@ const {
   deactivateSchoolClass,
   getSchoolTeachers,
   createTeacherAssignment,
+  getTeacherAssignments,
+  deactivateTeacherAssignment,
 } = require("../controllers/schoolController");
+
 
 const {
   addSchoolTeacher,
@@ -96,5 +99,26 @@ router.patch(
   requireSchoolRole(["school_admin", "principal"]),
   deactivateSchoolTeacher
 );
+
+// Get teacher assignments
+router.get(
+  "/:schoolId/assignments",
+  protect,
+  requireSchoolRole([
+    "school_admin",
+    "principal",
+    "teacher",
+  ]),
+  getTeacherAssignments
+);
+
+// Remove teacher assignment
+router.patch(
+  "/:schoolId/assignments/:assignmentId/deactivate",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  deactivateTeacherAssignment
+);
+
 
 module.exports = router;

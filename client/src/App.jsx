@@ -22,7 +22,7 @@ import CreateSchool from "./pages/school/CreateSchool";
 import MySchool from "./pages/school/MySchool";
 import SchoolVerification from "./pages/admin/SchoolVerification";
 import SchoolTeachers from "./pages/school/SchoolTeachers";
-
+import SchoolAssignments from "./pages/school/SchoolAssignments";
 
 // ==========================================================
 // ROUTES
@@ -270,6 +270,11 @@ const App = () => (
 <Route
   path="/school/:schoolId/teachers"
   element={<SchoolTeachers />}
+/>
+
+<Route
+  path="/school/:schoolId/assignments"
+  element={<SchoolAssignments />}
 />
       </Routes>
     </Suspense>

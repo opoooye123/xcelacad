@@ -495,6 +495,89 @@ const createTeacherAssignment = async (req, res) => {
 };
 
 // ==========================================
+// GET SCHOOL TEACHER ASSIGNMENTS
+// ==========================================
+const getTeacherAssignments = async (req, res) => {
+  try {
+    const { schoolId } = req.params;
+
+    const filter = {
+      school: schoolId,
+      isActive: true,
+    };
+
+    // Teachers should eventually only see their
+    // own assignments.
+    if (req.schoolMembership.role === "teacher") {
+      filter.teacher = req.user._id;
+    }
+
+    const assignments = await TeacherAssignment.find(filter)
+      .populate("teacher", "name email avatar")
+      .populate("subject", "name slug")
+      .populate(
+        "class",
+        "name level section academicSession"
+      )
+      .sort({
+        academicSession: -1,
+        createdAt: -1,
+      });
+
+    res.json({
+      assignments,
+    });
+  } catch (error) {
+    console.error(
+      "Get teacher assignments error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to fetch teacher assignments.",
+    });
+  }
+};
+
+// ==========================================
+// DEACTIVATE TEACHER ASSIGNMENT
+// ==========================================
+const deactivateTeacherAssignment = async (req, res) => {
+  try {
+    const { schoolId, assignmentId } = req.params;
+
+    const assignment = await TeacherAssignment.findOne({
+      _id: assignmentId,
+      school: schoolId,
+      isActive: true,
+    });
+
+    if (!assignment) {
+      return res.status(404).json({
+        message: "Teacher assignment not found.",
+      });
+    }
+
+    assignment.isActive = false;
+
+    await assignment.save();
+
+    res.json({
+      message: "Teacher assignment removed successfully.",
+      assignment,
+    });
+  } catch (error) {
+    console.error(
+      "Deactivate teacher assignment error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to remove teacher assignment.",
+    });
+  }
+};
+// ==========================================
 // EXPORTS
 // ==========================================
 module.exports = {
@@ -507,5 +590,7 @@ module.exports = {
   deactivateSchoolClass,
   getSchoolDashboard,
   getSchoolTeachers,
-  createTeacherAssignment
+  createTeacherAssignment,
+  getTeacherAssignments,
+  deactivateTeacherAssignment
 };
