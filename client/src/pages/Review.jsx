@@ -77,8 +77,9 @@ const formatNextReview = (date) => {
 // ==========================================================
 // MAIN PAGE
 // ==========================================================
-const navigate = useNavigate();
+
 const Review = () => {
+  const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState(null);
   const [selectedAnswer, setSelectedAnswer] =
     useState("");
