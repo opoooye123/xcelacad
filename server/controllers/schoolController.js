@@ -80,10 +80,9 @@ const createSchool = async (req, res) => {
 // ==========================================
 const getMySchools = async (req, res) => {
   try {
-    const memberships = await SchoolMembership.find({
-      user: req.user._id,
-      isActive: true,
-    })
+   const memberships = await SchoolMembership.find({
+  user: req.user._id,
+})
       .populate("school", "name code logo isVerified isActive")
       .populate("class", "name level section academicSession");
 

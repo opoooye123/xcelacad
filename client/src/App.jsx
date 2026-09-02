@@ -19,7 +19,7 @@ import Review from "./pages/Review";
 import SchoolDashboard from "./pages/school/SchoolDashboard";
 import SchoolClasses from "./pages/school/SchoolClasses";
 import CreateSchool from "./pages/school/CreateSchool";
-
+import MySchool from "./pages/school/MySchool";
 
 
 // ==========================================================
@@ -253,6 +253,11 @@ const App = () => (
 <Route
   path="/school/create"
   element={<CreateSchool />}
+/>
+
+<Route
+  path="/school/my"
+  element={<MySchool />}
 />
       </Routes>
     </Suspense>

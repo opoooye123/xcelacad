@@ -63,13 +63,9 @@ const CreateSchool = () => {
       );
 
       // The school has now been created, so we can use its ID.
-      const schoolId = data.school?._id;
-
-      if (schoolId) {
-        setTimeout(() => {
-          navigate(`/school/${schoolId}`);
-        }, 1200);
-      }
+     setTimeout(() => {
+  navigate("/school/my");
+}, 1500);
     } catch (error) {
       console.error("Create school error:", error);
       setError(error.message);
