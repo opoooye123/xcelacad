@@ -2,7 +2,7 @@ const School = require("../models/School");
 const SchoolMembership = require("../models/SchoolMembership");
 const SchoolClass = require("../models/SchoolClass");
 const TeacherAssignment = require("../models/TeacherAssignment");
-
+const Subject = require("../models/Subject");
 // ==========================================
 // CREATE SCHOOL
 // ==========================================
@@ -358,6 +358,143 @@ const getSchoolDashboard = async (req, res) => {
 };
 
 // ==========================================
+// GET SCHOOL TEACHERS
+// ==========================================
+const getSchoolTeachers = async (req, res) => {
+  try {
+    const { schoolId } = req.params;
+
+    const teachers = await SchoolMembership.find({
+      school: schoolId,
+      role: "teacher",
+      isActive: true,
+    })
+      .populate("user", "name email avatar")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      teachers,
+    });
+  } catch (error) {
+    console.error("Get school teachers error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch school teachers.",
+    });
+  }
+};
+
+// ==========================================
+// CREATE TEACHER ASSIGNMENT
+// ==========================================
+const createTeacherAssignment = async (req, res) => {
+  try {
+    const { schoolId } = req.params;
+    const { teacher, subject, class: classId, academicSession } = req.body;
+
+    if (!teacher || !subject || !classId || !academicSession) {
+      return res.status(400).json({
+        message:
+          "Teacher, subject, class and academic session are required.",
+      });
+    }
+
+    // Make sure the selected user is an active teacher
+    // in this school.
+    const teacherMembership = await SchoolMembership.findOne({
+      school: schoolId,
+      user: teacher,
+      role: "teacher",
+      isActive: true,
+    });
+
+    if (!teacherMembership) {
+      return res.status(400).json({
+        message:
+          "The selected user is not an active teacher in this school.",
+      });
+    }
+
+    // Make sure the class belongs to this school.
+    const schoolClass = await SchoolClass.findOne({
+      _id: classId,
+      school: schoolId,
+      isActive: true,
+    });
+
+    if (!schoolClass) {
+      return res.status(400).json({
+        message:
+          "The selected class does not belong to this school.",
+      });
+    }
+
+    const schoolSubject = await Subject.findOne({
+      _id: subject,
+      isActive: true,
+    });
+
+    if (!schoolSubject) {
+      return res.status(400).json({
+        message: "The selected subject does not exist.",
+      });
+    }
+
+    // Prevent duplicate assignment.
+    const existingAssignment = await TeacherAssignment.findOne({
+      school: schoolId,
+      teacher,
+      subject,
+      class: classId,
+      academicSession: academicSession.trim(),
+    });
+
+    if (existingAssignment) {
+      return res.status(409).json({
+        message:
+          "This teacher is already assigned to this subject and class for this academic session.",
+      });
+    }
+
+    const assignment = await TeacherAssignment.create({
+      school: schoolId,
+      teacher,
+      subject,
+      class: classId,
+      academicSession: academicSession.trim(),
+      isActive: true,
+    });
+
+    const populatedAssignment =
+      await TeacherAssignment.findById(assignment._id)
+        .populate("teacher", "name email avatar")
+        .populate("subject", "name slug")
+        .populate(
+          "class",
+          "name level section academicSession"
+        );
+
+    res.status(201).json({
+      message: "Teacher assignment created successfully.",
+      assignment: populatedAssignment,
+    });
+  } catch (error) {
+    console.error("Create teacher assignment error:", error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message:
+          "This teacher assignment already exists.",
+      });
+    }
+
+    res.status(500).json({
+      message: "Failed to create teacher assignment.",
+    });
+  }
+};
+
+// ==========================================
 // EXPORTS
 // ==========================================
 module.exports = {
@@ -369,4 +506,6 @@ module.exports = {
   getSchoolClasses,
   deactivateSchoolClass,
   getSchoolDashboard,
+  getSchoolTeachers,
+  createTeacherAssignment
 };

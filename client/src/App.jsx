@@ -21,6 +21,8 @@ import SchoolClasses from "./pages/school/SchoolClasses";
 import CreateSchool from "./pages/school/CreateSchool";
 import MySchool from "./pages/school/MySchool";
 import SchoolVerification from "./pages/admin/SchoolVerification";
+import SchoolTeachers from "./pages/school/SchoolTeachers";
+
 
 // ==========================================================
 // ROUTES
@@ -263,6 +265,11 @@ const App = () => (
 <Route
   path="/admin/schools/verification"
   element={<SchoolVerification />}
+/>
+
+<Route
+  path="/school/:schoolId/teachers"
+  element={<SchoolTeachers />}
 />
       </Routes>
     </Suspense>

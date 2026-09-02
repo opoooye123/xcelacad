@@ -5,13 +5,35 @@ const {
   createSchoolClass,
   getSchoolClasses,
   deactivateSchoolClass,
+  getSchoolTeachers,
+  createTeacherAssignment,
 } = require("../controllers/schoolController");
+
+const {
+  addSchoolTeacher,
+  deactivateSchoolTeacher,
+} = require("../controllers/schoolTeacherController");
 
 const { protect } = require("../middleware/authMiddleware");
 const { requireSchoolRole } = require("../middleware/schoolMiddleware");
 
 const router = express.Router();
 
+// ==========================================
+// SCHOOL DASHBOARD
+// ==========================================
+router.get(
+  "/:schoolId/dashboard",
+  protect,
+  requireSchoolRole(["school_admin", "principal", "teacher"]),
+  getSchoolDashboard
+);
+
+// ==========================================
+// SCHOOL CLASSES
+// ==========================================
+
+// Create class
 router.post(
   "/:schoolId/classes",
   protect,
@@ -19,6 +41,7 @@ router.post(
   createSchoolClass
 );
 
+// Get classes
 router.get(
   "/:schoolId/classes",
   protect,
@@ -26,6 +49,7 @@ router.get(
   getSchoolClasses
 );
 
+// Deactivate class
 router.patch(
   "/:schoolId/classes/:classId/deactivate",
   protect,
@@ -33,11 +57,44 @@ router.patch(
   deactivateSchoolClass
 );
 
+// ==========================================
+// SCHOOL TEACHERS
+// ==========================================
+
+// Get all active teachers in the school
 router.get(
-  "/:schoolId/dashboard",
+  "/:schoolId/teachers",
   protect,
-  requireSchoolRole(["school_admin", "principal", "teacher"]),
-  getSchoolDashboard
+  requireSchoolRole(["school_admin", "principal"]),
+  getSchoolTeachers
+);
+
+// ==========================================
+// TEACHER ASSIGNMENTS
+// ==========================================
+
+// Create teacher assignment
+router.post(
+  "/:schoolId/assignments",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  createTeacherAssignment
+);
+
+// Add teacher
+router.post(
+  "/:schoolId/teachers",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  addSchoolTeacher
+);
+
+// Remove teacher
+router.patch(
+  "/:schoolId/teachers/:teacherId/deactivate",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  deactivateSchoolTeacher
 );
 
 module.exports = router;
