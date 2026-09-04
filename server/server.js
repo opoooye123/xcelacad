@@ -36,6 +36,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const schoolRoutes = require("./routes/schoolRoutes");
 const schoolManagementRoutes = require("./routes/schoolManagementRoutes");
 
+const schoolExamRoutes = require("./routes/schoolExamRoutes");
 
 const app = express();
 
@@ -104,6 +105,10 @@ app.use(
 );
 app.use("/api/schools", schoolRoutes);
 app.use("/api/schools", schoolManagementRoutes);
+app.use("/api/schools", schoolExamRoutes);
+
+
+
 // ==========================================
 // ADMIN API  (protect + adminOnly inside)
 // ==========================================

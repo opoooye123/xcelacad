@@ -62,6 +62,32 @@ const examSchema = new mongoose.Schema(
       default: true,
     },
 
+    // ==========================================
+    // SCHOOL EXAM CONTEXT
+    // ==========================================
+
+    // Null for normal Xcel practice/JAMB/etc.
+    // Set when the exam belongs to a school.
+    school: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "School",
+      default: null,
+    },
+
+    // The specific school class this exam is for.
+    schoolClass: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SchoolClass",
+      default: null,
+    },
+
+    // Teacher who created the school exam.
+    createdByTeacher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     // Auto-generated practice sessions (subject/year
     // practice). Hidden from the published exam list.
     isPractice: {
@@ -80,5 +106,16 @@ const examSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// ==========================================
+// INDEXES
+// ==========================================
+
+// Helps school analytics find exams quickly.
+examSchema.index({
+  school: 1,
+  schoolClass: 1,
+  createdAt: -1,
+});
 
 module.exports = mongoose.model("Exam", examSchema);

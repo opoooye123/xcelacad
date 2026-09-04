@@ -129,6 +129,16 @@ const TeacherDashboard = () => {
             Welcome, {teacher.name}
           </p>
         </div>
+        <button
+  onClick={() =>
+    navigate(
+      `/school/${schoolId}/exams/create`
+    )
+  }
+  className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+>
+  Create School Exam
+</button>
 
         {teacher.avatar ? (
           <img
