@@ -169,8 +169,14 @@ router.patch(
   deactivateSchoolStudent
 );
 
-const {
-  getTeacherDashboard,
-} = require("../controllers/schoolTeacherDashboardController");
 
+// ==========================================
+// TEACHER DASHBOARD
+// ==========================================
+router.get(
+  "/:schoolId/teacher-dashboard",
+  protect,
+  requireSchoolRole(["teacher"]),
+  getTeacherDashboard
+);
 module.exports = router;
