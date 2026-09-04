@@ -26,6 +26,9 @@ import SchoolAssignments from "./pages/school/SchoolAssignments";
 import SchoolStudents from "./pages/school/SchoolStudents";
 import TeacherDashboard from "./pages/school/TeacherDashboard";
 import CreateSchoolExam from "./pages/school/CreateSchoolExam";
+import SchoolExams from "./pages/school/SchoolExams";
+
+
 
 
 // ==========================================================
@@ -299,6 +302,17 @@ const App = () => (
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/school/:schoolId/exams"
+  element={
+    <ProtectedRoute>
+      <SchoolExams />
+    </ProtectedRoute>
+  }
+/>
+
+
       </Routes>
     </Suspense>
   </MaintenanceGate>

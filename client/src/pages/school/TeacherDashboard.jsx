@@ -139,6 +139,16 @@ const TeacherDashboard = () => {
 >
   Create School Exam
 </button>
+<button
+  onClick={() =>
+    navigate(
+      `/school/${schoolId}/exams`
+    )
+  }
+  className="rounded-lg border px-4 py-2"
+>
+  My School Exams
+</button>
 
         {teacher.avatar ? (
           <img
