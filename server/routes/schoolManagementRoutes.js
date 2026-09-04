@@ -17,6 +17,15 @@ const {
   deactivateSchoolTeacher,
 } = require("../controllers/schoolTeacherController");
 
+
+const {
+  getSchoolStudents,
+  addSchoolStudent,
+  changeStudentClass,
+  deactivateSchoolStudent,
+} = require("../controllers/schoolStudentController");
+
+
 const { protect } = require("../middleware/authMiddleware");
 const { requireSchoolRole } = require("../middleware/schoolMiddleware");
 
@@ -118,6 +127,42 @@ router.patch(
   protect,
   requireSchoolRole(["school_admin", "principal"]),
   deactivateTeacherAssignment
+);
+
+// ==========================================
+// SCHOOL STUDENTS
+// ==========================================
+
+// Get all active students in a school
+router.get(
+  "/:schoolId/students",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  getSchoolStudents
+);
+
+// Add an existing Xcel user as a student
+router.post(
+  "/:schoolId/students",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  addSchoolStudent
+);
+
+// Change a student's class
+router.patch(
+  "/:schoolId/students/:studentId/class",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  changeStudentClass
+);
+
+// Remove/deactivate a student from the school
+router.patch(
+  "/:schoolId/students/:studentId/deactivate",
+  protect,
+  requireSchoolRole(["school_admin", "principal"]),
+  deactivateSchoolStudent
 );
 
 

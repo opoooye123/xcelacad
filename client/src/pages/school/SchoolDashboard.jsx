@@ -203,7 +203,9 @@ const SchoolDashboard = () => {
               </p>
             </button>
 
-            <button className="rounded-xl border p-4 text-left hover:bg-gray-50">
+            <button className="rounded-xl border p-4 text-left hover:bg-gray-50" onClick={() =>
+  navigate(`/school/${schoolId}/students`)
+}>
               <p className="font-semibold text-gray-900">
                 Students
               </p>
