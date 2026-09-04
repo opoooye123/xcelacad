@@ -23,7 +23,7 @@ const {
   addSchoolStudent,
   changeStudentClass,
   deactivateSchoolStudent,
-} = require("../controllers/schoolStudentController");
+} = require("../controllers/schoolStudentsController");
 
 
 const { protect } = require("../middleware/authMiddleware");
