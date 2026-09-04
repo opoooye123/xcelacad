@@ -26,6 +26,10 @@ const {
 } = require("../controllers/schoolStudentsController");
 
 
+const {
+  getTeacherDashboard,
+} = require("../controllers/schoolTeacherDashboardController");
+
 const { protect } = require("../middleware/authMiddleware");
 const { requireSchoolRole } = require("../middleware/schoolMiddleware");
 
@@ -165,5 +169,8 @@ router.patch(
   deactivateSchoolStudent
 );
 
+const {
+  getTeacherDashboard,
+} = require("../controllers/schoolTeacherDashboardController");
 
 module.exports = router;

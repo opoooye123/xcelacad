@@ -214,6 +214,14 @@ const SchoolDashboard = () => {
               </p>
             </button>
 
+            <button
+  onClick={() =>
+    navigate(`/school/${schoolId}/teacher-dashboard`)
+  }
+>
+  Teacher Dashboard
+</button>
+
             <button onClick={() =>
   navigate(`/school/${schoolId}/assignments`)
 }  className="rounded-xl border p-4 text-left hover:bg-gray-50">

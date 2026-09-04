@@ -24,7 +24,7 @@ import SchoolVerification from "./pages/admin/SchoolVerification";
 import SchoolTeachers from "./pages/school/SchoolTeachers";
 import SchoolAssignments from "./pages/school/SchoolAssignments";
 import SchoolStudents from "./pages/school/SchoolStudents";
-
+import TeacherDashboard from "./pages/school/TeacherDashboard";
 
 
 
@@ -286,6 +286,10 @@ const App = () => (
   element={<SchoolStudents />}
 />
 
+<Route
+  path="/school/:schoolId/teacher-dashboard"
+  element={<TeacherDashboard />}
+/>
 
       </Routes>
     </Suspense>
