@@ -38,6 +38,46 @@ const startExam = async (req, res) => {
       });
     }
 
+    // ==========================================
+    // SCHOOL EXAM ACCESS CHECK
+    // ==========================================
+    // If this is a school exam, the student must:
+    // 1. Be an active student in the school
+    // 2. Belong to the exact class assigned to the exam
+    //
+    // Personal Xcel exams are unaffected because
+    // exam.school will be null.
+    // ==========================================
+
+    if (exam.school) {
+      const membership =
+        await SchoolMembership.findOne({
+          school: exam.school,
+          user: req.user._id,
+          role: "student",
+          isActive: true,
+        });
+
+      if (!membership) {
+        return res.status(403).json({
+          message:
+            "You are not a student in this school.",
+        });
+      }
+
+      if (
+        !membership.class ||
+        !exam.schoolClass ||
+        membership.class.toString() !==
+          exam.schoolClass.toString()
+      ) {
+        return res.status(403).json({
+          message:
+            "This school exam is not assigned to your class.",
+        });
+      }
+    }
+
     // Check if student already has an active attempt
     const existingAttempt = await ExamAttempt.findOne({
       student: req.user._id,

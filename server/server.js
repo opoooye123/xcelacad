@@ -37,6 +37,9 @@ const schoolRoutes = require("./routes/schoolRoutes");
 const schoolManagementRoutes = require("./routes/schoolManagementRoutes");
 
 const schoolExamRoutes = require("./routes/schoolExamRoutes");
+const schoolStudentExamRoutes = require("./routes/schoolStudentExamRoutes");
+
+
 
 const app = express();
 
@@ -106,7 +109,10 @@ app.use(
 app.use("/api/schools", schoolRoutes);
 app.use("/api/schools", schoolManagementRoutes);
 app.use("/api/schools", schoolExamRoutes);
-
+app.use(
+  "/api/schools",
+  schoolStudentExamRoutes
+);
 
 
 // ==========================================

@@ -4,6 +4,7 @@ const Exam = require("../models/Exam");
 const Question = require("../models/Question");
 const Subject = require("../models/Subject");
 const ExamAttempt = require("../models/ExamAttempt");
+const SchoolMembership = require("../models/SchoolMembership");
 
 const { EXAM_TYPES } = require("../config/constants");
 
@@ -13,6 +14,10 @@ const { EXAM_TYPES } = require("../config/constants");
 // Practice sessions are Exam documents too
 // (isPractice: true) but they are generated per
 // student, so every catalogue query filters them out.
+//
+// School exams are handled through school-specific
+// routes and are excluded from the normal public
+// exam catalogue.
 // ==========================================
 
 const MAX_LIMIT = 100;
@@ -179,6 +184,14 @@ const createExam = async (req, res) => {
 // ==========================================
 // GET PUBLISHED EXAMS
 // ==========================================
+// Normal Xcel exam catalogue.
+//
+// IMPORTANT:
+// School exams are excluded here because students
+// should only see school exams belonging to their
+// own school and class through the school-specific
+// student exam endpoint.
+// ==========================================
 
 const getPublishedExams = async (req, res) => {
   try {
@@ -186,6 +199,10 @@ const getPublishedExams = async (req, res) => {
       isActive: true,
       isPublished: true,
       isPractice: { $ne: true },
+
+      // Only normal Xcel exams.
+      // School exams have school != null.
+      school: null,
     };
 
     if (
@@ -242,8 +259,16 @@ const getPublishedExams = async (req, res) => {
 // ==========================================
 // Visible when published, or when it is the viewer's
 // own practice session, or to an admin previewing a
-// draft. Practice sessions are never published, so
-// without this a generated session would 404.
+// draft.
+//
+// SCHOOL EXAMS:
+// A student can only view a school exam when they are
+// an active student in the school AND belong to the
+// exact class assigned to that exam.
+//
+// Practice sessions are never published, so without
+// this a generated session would 404.
+// ==========================================
 
 const getExamById = async (req, res) => {
   try {
@@ -269,6 +294,38 @@ const getExamById = async (req, res) => {
       return res.status(404).json({
         message: "Exam not found",
       });
+    }
+
+    // ==========================================
+    // SCHOOL EXAM ACCESS CHECK
+    // ==========================================
+    if (exam.school) {
+      const membership =
+        await SchoolMembership.findOne({
+          school: exam.school,
+          user: req.user._id,
+          role: "student",
+          isActive: true,
+        });
+
+      if (!membership) {
+        return res.status(403).json({
+          message:
+            "You are not a student in this school.",
+        });
+      }
+
+      if (
+        !membership.class ||
+        !exam.schoolClass ||
+        membership.class.toString() !==
+          exam.schoolClass.toString()
+      ) {
+        return res.status(403).json({
+          message:
+            "This school exam is not assigned to your class.",
+        });
+      }
     }
 
     const isOwnPractice =

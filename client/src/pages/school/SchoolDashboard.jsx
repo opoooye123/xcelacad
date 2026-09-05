@@ -214,13 +214,6 @@ const SchoolDashboard = () => {
               </p>
             </button>
 
-            <button
-  onClick={() =>
-    navigate(`/school/${schoolId}/teacher-dashboard`)
-  }
->
-  Teacher Dashboard
-</button>
 
             <button onClick={() =>
   navigate(`/school/${schoolId}/assignments`)
