@@ -1,6 +1,7 @@
 const Exam = require("../models/Exam");
 const ExamAttempt = require("../models/ExamAttempt");
 const ReviewItem = require("../models/ReviewItem");
+const SchoolMembership = require("../models/SchoolMembership");
 
 const { ANSWER_KEYS } = require("../config/constants");
 
