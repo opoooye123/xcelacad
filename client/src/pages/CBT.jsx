@@ -77,18 +77,18 @@ const CBT = () => {
       setSelectedAnswers(restoredAnswers);
 
       // Server sends the authoritative endTime.
-      let endTime = null;
+let endTime = null;
 
-      if (data.attempt.endTime) {
-        endTime = new Date(data.attempt.endTime).getTime();
-      } else if (
-        data.attempt.startedAt &&
-        data.attempt.exam?.duration
-      ) {
-        endTime =
-          new Date(data.attempt.startedAt).getTime() +
-          data.attempt.exam.duration * 60 * 1000;
-      }
+if (data.attempt.endTime) {
+  endTime = new Date(data.attempt.endTime).getTime();
+} else if (
+  data.attempt.startedAt &&
+  data.attempt.duration
+) {
+  endTime =
+    new Date(data.attempt.startedAt).getTime() +
+    data.attempt.duration * 60 * 1000;
+}
 
       if (endTime) {
         const remaining = Math.max(
