@@ -28,7 +28,7 @@ import TeacherDashboard from "./pages/school/TeacherDashboard";
 import CreateSchoolExam from "./pages/school/CreateSchoolExam";
 import SchoolExams from "./pages/school/SchoolExams";
 import StudentSchoolExams from "./pages/school/StudentSchoolExams";
-
+import StudentSchoolExamDetails from "./pages/school/StudentSchoolExamDetails";
 
 
 // ==========================================================
