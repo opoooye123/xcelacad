@@ -57,9 +57,9 @@ const StudentSchoolExamDetails = () => {
     }
   }, [examId]);
 
-  const handleStartExam = () => {
-    navigate(`/exam/${examId}`);
-  };
+ const handleStartExam = () => {
+  navigate(`/cbt/${examId}`);
+};
 
   if (loading) {
     return (
