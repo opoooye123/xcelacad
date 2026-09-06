@@ -317,7 +317,10 @@ const App = () => (
   element={<StudentSchoolExams />}
 />
 
-
+<Route
+  path="/school/:schoolId/student-exams/:examId"
+  element={<StudentSchoolExamDetails />}
+/>
       </Routes>
     </Suspense>
   </MaintenanceGate>

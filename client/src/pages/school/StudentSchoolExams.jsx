@@ -241,15 +241,15 @@ const StudentSchoolExams = () => {
 
                 {/* BUTTON */}
                 <button
-                  onClick={() =>
-                    navigate(
-                      `/school/${schoolId}/exams/${exam._id}`
-                    )
-                  }
-                  className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-                >
-                  View Exam
-                </button>
+  onClick={() =>
+    navigate(
+      `/school/${schoolId}/exams/${exam._id}`
+    )
+  }
+  className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+>
+  View Exam
+</button>
               </div>
             ))}
           </div>
