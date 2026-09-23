@@ -21,8 +21,14 @@ const getStudentDetailedPerformance = async (req, res) => {
       isActive: true,
     })
       .select("class subject")
-      .populate("class", "name level section academicSession")
-      .populate("subject", "name slug");
+      .populate(
+        "class",
+        "name level section academicSession"
+      )
+      .populate(
+        "subject",
+        "name slug"
+      );
 
     if (assignments.length === 0) {
       return res.status(403).json({
@@ -45,25 +51,35 @@ const getStudentDetailedPerformance = async (req, res) => {
       ),
     ];
 
+    if (assignedClassIds.length === 0) {
+      return res.status(403).json({
+        message:
+          "You are not assigned to any classes in this school.",
+      });
+    }
+
     // ==========================================
     // 3. FIND STUDENT'S SCHOOL MEMBERSHIP
     // ==========================================
 
-    const membership = await SchoolMembership.findOne({
-      school: schoolId,
-      user: studentId,
-      role: "student",
-      isActive: true,
-      class: { $in: assignedClassIds },
-    })
-      .populate(
-        "user",
-        "name email avatar"
-      )
-      .populate(
-        "class",
-        "name level section academicSession"
-      );
+    const membership =
+      await SchoolMembership.findOne({
+        school: schoolId,
+        user: studentId,
+        role: "student",
+        isActive: true,
+        class: {
+          $in: assignedClassIds,
+        },
+      })
+        .populate(
+          "user",
+          "name email avatar"
+        )
+        .populate(
+          "class",
+          "name level section academicSession"
+        );
 
     if (!membership) {
       return res.status(403).json({
@@ -76,23 +92,27 @@ const getStudentDetailedPerformance = async (req, res) => {
     // 4. GET SCHOOL EXAMS FOR STUDENT'S CLASS
     // ==========================================
 
-    const schoolExams = await Exam.find({
-      school: schoolId,
-      schoolClass: membership.class._id,
-      isActive: true,
-      isPractice: false,
-    })
-      .select(
-        "title description examType subjects totalMarks schoolClass createdAt"
-      )
-      .populate("subjects", "name slug")
-      .populate(
-        "schoolClass",
-        "name level section academicSession"
-      )
-      .sort({
-        createdAt: -1,
-      });
+    const schoolExams =
+      await Exam.find({
+        school: schoolId,
+        schoolClass: membership.class._id,
+        isActive: true,
+        isPractice: false,
+      })
+        .select(
+          "title description examType subjects questions totalMarks schoolClass createdAt"
+        )
+        .populate(
+          "subjects",
+          "name slug"
+        )
+        .populate(
+          "schoolClass",
+          "name level section academicSession"
+        )
+        .sort({
+          createdAt: -1,
+        });
 
     // ==========================================
     // 5. GET STUDENT'S SUBMITTED ATTEMPTS
@@ -105,18 +125,36 @@ const getStudentDetailedPerformance = async (req, res) => {
     let attempts = [];
 
     if (examIds.length > 0) {
-      attempts = await ExamAttempt.find({
-        student: studentId,
-        exam: { $in: examIds },
-        status: "submitted",
-      })
-        .populate(
-          "exam",
-          "title description examType subjects totalMarks schoolClass createdAt"
-        )
-        .sort({
-          submittedAt: -1,
-        });
+      attempts =
+        await ExamAttempt.find({
+          student: studentId,
+          exam: {
+            $in: examIds,
+          },
+          status: "submitted",
+        })
+          .populate(
+            "exam",
+            "title description examType subjects questions totalMarks schoolClass createdAt"
+          )
+          .populate({
+            path: "answers.question",
+            select:
+              "subject topic correctAnswer marks questionText difficulty",
+            populate: [
+              {
+                path: "subject",
+                select: "name slug",
+              },
+              {
+                path: "topic",
+                select: "name slug",
+              },
+            ],
+          })
+          .sort({
+            submittedAt: -1,
+          });
     }
 
     // ==========================================
@@ -140,7 +178,8 @@ const getStudentDetailedPerformance = async (req, res) => {
       totalMarks > 0
         ? Number(
             (
-              (totalScore / totalMarks) *
+              (totalScore /
+                totalMarks) *
               100
             ).toFixed(2)
           )
@@ -150,139 +189,395 @@ const getStudentDetailedPerformance = async (req, res) => {
     // 7. PERFORMANCE PER EXAM
     // ==========================================
 
-    const examPerformance = attempts.map(
-      (attempt) => {
+    const examPerformance =
+      attempts.map((attempt) => {
         const percentage =
           attempt.totalMarks > 0
             ? Number(
                 (
-                  (attempt.score /
-                    attempt.totalMarks) *
+                  (Number(
+                    attempt.score || 0
+                  ) /
+                    Number(
+                      attempt.totalMarks ||
+                        0
+                    )) *
                   100
                 ).toFixed(2)
               )
             : 0;
 
         return {
-          attemptId: attempt._id,
+          attemptId:
+            attempt._id,
 
           exam: {
-            id: attempt.exam?._id,
-            title: attempt.exam?.title,
+            id:
+              attempt.exam?._id,
+
+            title:
+              attempt.exam?.title,
+
             description:
               attempt.exam?.description,
+
             examType:
               attempt.exam?.examType,
+
             subjects:
-              attempt.exam?.subjects || [],
+              attempt.exam?.subjects ||
+              [],
+
             totalMarks:
               attempt.exam?.totalMarks,
+
             createdAt:
               attempt.exam?.createdAt,
           },
 
-          score: attempt.score,
+          score:
+            Number(
+              attempt.score || 0
+            ),
+
           totalMarks:
-            attempt.totalMarks,
+            Number(
+              attempt.totalMarks || 0
+            ),
+
           percentage,
 
           submittedAt:
             attempt.submittedAt,
         };
-      }
-    );
+      });
 
     // ==========================================
-    // 8. PERFORMANCE BY SUBJECT
+    // 8. PERFORMANCE BY SUBJECT & TOPIC
     // ==========================================
 
     const subjectPerformanceMap = {};
+    const topicPerformanceMap = {};
 
     attempts.forEach((attempt) => {
-      if (!attempt.exam?.subjects) {
+      if (
+        !attempt.answers ||
+        attempt.answers.length === 0
+      ) {
         return;
       }
 
-      attempt.exam.subjects.forEach(
-        (subject) => {
-          const subjectId =
-            subject._id.toString();
+      attempt.answers.forEach(
+        (answer) => {
+          const question =
+            answer.question;
 
-          if (
-            !subjectPerformanceMap[
-              subjectId
-            ]
-          ) {
-            subjectPerformanceMap[
-              subjectId
-            ] = {
-              subject: {
-                id: subject._id,
-                name: subject.name,
-                slug: subject.slug,
-              },
-              attempts: 0,
-              totalScore: 0,
-              totalMarks: 0,
-            };
+          // Skip answers where the
+          // question could not be populated
+          if (!question) {
+            return;
           }
 
-          subjectPerformanceMap[
-            subjectId
-          ].attempts += 1;
-
-          // At this stage the exam score is
-          // associated with each subject.
-          //
-          // Later, when question-level analytics
-          // are added, this can become a true
-          // subject-specific score.
-          subjectPerformanceMap[
-            subjectId
-          ].totalScore += Number(
-            attempt.score || 0
+          const marks = Number(
+            question.marks || 1
           );
 
-          subjectPerformanceMap[
-            subjectId
-          ].totalMarks += Number(
-            attempt.totalMarks || 0
-          );
+          const selectedAnswer =
+            answer.selectedAnswer;
+
+          const correctAnswer =
+            question.correctAnswer;
+
+          const isUnanswered =
+            !selectedAnswer;
+
+          const isCorrect =
+            !isUnanswered &&
+            selectedAnswer ===
+              correctAnswer;
+
+          const isWrong =
+            !isUnanswered &&
+            !isCorrect;
+
+          const earnedMarks =
+            isCorrect ? marks : 0;
+
+          // ========================================
+          // SUBJECT PERFORMANCE
+          // ========================================
+
+          const subject =
+            question.subject;
+
+          if (subject?._id) {
+            const subjectId =
+              subject._id.toString();
+
+            if (
+              !subjectPerformanceMap[
+                subjectId
+              ]
+            ) {
+              subjectPerformanceMap[
+                subjectId
+              ] = {
+                subject: {
+                  id: subject._id,
+                  name:
+                    subject.name,
+                  slug:
+                    subject.slug,
+                },
+
+                questions: 0,
+
+                correct: 0,
+
+                wrong: 0,
+
+                unanswered: 0,
+
+                totalScore: 0,
+
+                totalMarks: 0,
+              };
+            }
+
+            const subjectData =
+              subjectPerformanceMap[
+                subjectId
+              ];
+
+            subjectData.questions += 1;
+
+            subjectData.totalMarks +=
+              marks;
+
+            subjectData.totalScore +=
+              earnedMarks;
+
+            if (isUnanswered) {
+              subjectData.unanswered += 1;
+            } else if (isCorrect) {
+              subjectData.correct += 1;
+            } else if (isWrong) {
+              subjectData.wrong += 1;
+            }
+          }
+
+          // ========================================
+          // TOPIC PERFORMANCE
+          // ========================================
+
+          const topic =
+            question.topic;
+
+          if (topic?._id) {
+            const topicId =
+              topic._id.toString();
+
+            if (
+              !topicPerformanceMap[
+                topicId
+              ]
+            ) {
+              topicPerformanceMap[
+                topicId
+              ] = {
+                topic: {
+                  id: topic._id,
+                  name:
+                    topic.name,
+                  slug:
+                    topic.slug,
+                },
+
+                subject: subject
+                  ? {
+                      id:
+                        subject._id,
+                      name:
+                        subject.name,
+                      slug:
+                        subject.slug,
+                    }
+                  : null,
+
+                questions: 0,
+
+                correct: 0,
+
+                wrong: 0,
+
+                unanswered: 0,
+
+                totalScore: 0,
+
+                totalMarks: 0,
+              };
+            }
+
+            const topicData =
+              topicPerformanceMap[
+                topicId
+              ];
+
+            topicData.questions += 1;
+
+            topicData.totalMarks +=
+              marks;
+
+            topicData.totalScore +=
+              earnedMarks;
+
+            if (isUnanswered) {
+              topicData.unanswered += 1;
+            } else if (isCorrect) {
+              topicData.correct += 1;
+            } else if (isWrong) {
+              topicData.wrong += 1;
+            }
+          }
         }
       );
     });
 
+    // ==========================================
+    // 9. FORMAT SUBJECT PERFORMANCE
+    // ==========================================
+
     const subjectPerformance =
       Object.values(
         subjectPerformanceMap
-      ).map((item) => {
-        const percentage =
-          item.totalMarks > 0
-            ? Number(
-                (
-                  (item.totalScore /
-                    item.totalMarks) *
-                  100
-                ).toFixed(2)
-              )
-            : 0;
+      )
+        .map((item) => {
+          const percentage =
+            item.totalMarks > 0
+              ? Number(
+                  (
+                    (item.totalScore /
+                      item.totalMarks) *
+                    100
+                  ).toFixed(2)
+                )
+              : 0;
 
-        return {
-          subject: item.subject,
-          attempts: item.attempts,
-          percentage,
-        };
-      });
+          return {
+            subject:
+              item.subject,
+
+            questions:
+              item.questions,
+
+            correct:
+              item.correct,
+
+            wrong:
+              item.wrong,
+
+            unanswered:
+              item.unanswered,
+
+            totalScore:
+              item.totalScore,
+
+            totalMarks:
+              item.totalMarks,
+
+            percentage,
+          };
+        })
+        .sort(
+          (a, b) =>
+            a.percentage -
+            b.percentage
+        );
 
     // ==========================================
-    // 9. BEST / LOWEST EXAM PERFORMANCE
+    // 10. FORMAT TOPIC PERFORMANCE
+    // ==========================================
+
+    const topicPerformance =
+      Object.values(
+        topicPerformanceMap
+      )
+        .map((item) => {
+          const percentage =
+            item.totalMarks > 0
+              ? Number(
+                  (
+                    (item.totalScore /
+                      item.totalMarks) *
+                    100
+                  ).toFixed(2)
+                )
+              : 0;
+
+          return {
+            topic:
+              item.topic,
+
+            subject:
+              item.subject,
+
+            questions:
+              item.questions,
+
+            correct:
+              item.correct,
+
+            wrong:
+              item.wrong,
+
+            unanswered:
+              item.unanswered,
+
+            totalScore:
+              item.totalScore,
+
+            totalMarks:
+              item.totalMarks,
+
+            percentage,
+          };
+        })
+        .sort(
+          (a, b) =>
+            a.percentage -
+            b.percentage
+        );
+
+    // ==========================================
+    // 11. IDENTIFY WEAK SUBJECTS
+    // ==========================================
+
+    const weakSubjects =
+      subjectPerformance.filter(
+        (item) =>
+          item.percentage < 50
+      );
+
+    // ==========================================
+    // 12. IDENTIFY WEAK TOPICS
+    // ==========================================
+
+    const weakTopics =
+      topicPerformance.filter(
+        (item) =>
+          item.percentage < 50
+      );
+
+    // ==========================================
+    // 13. BEST / LOWEST EXAM PERFORMANCE
     // ==========================================
 
     const sortedPerformance = [
       ...examPerformance,
     ].sort(
       (a, b) =>
-        b.percentage - a.percentage
+        b.percentage -
+        a.percentage
     );
 
     const bestExam =
@@ -298,23 +593,37 @@ const getStudentDetailedPerformance = async (req, res) => {
         : null;
 
     // ==========================================
-    // 10. RESPONSE
+    // 14. RESPONSE
     // ==========================================
 
-    res.json({
+    return res.json({
       student: {
-        id: membership.user?._id,
-        name: membership.user?.name,
-        email: membership.user?.email,
-        avatar: membership.user?.avatar,
+        id:
+          membership.user?._id,
+
+        name:
+          membership.user?.name,
+
+        email:
+          membership.user?.email,
+
+        avatar:
+          membership.user?.avatar,
 
         class: membership.class
           ? {
-              id: membership.class._id,
-              name: membership.class.name,
-              level: membership.class.level,
+              id:
+                membership.class._id,
+
+              name:
+                membership.class.name,
+
+              level:
+                membership.class.level,
+
               section:
                 membership.class.section,
+
               academicSession:
                 membership.class
                   .academicSession,
@@ -323,17 +632,35 @@ const getStudentDetailedPerformance = async (req, res) => {
       },
 
       summary: {
-        examCount: schoolExams.length,
-        attemptCount: attempts.length,
+        examCount:
+          schoolExams.length,
+
+        attemptCount:
+          attempts.length,
+
         averagePercentage,
+
         totalScore,
+
         totalMarks,
       },
 
       performance: {
-        exams: examPerformance,
-        subjects: subjectPerformance,
+        exams:
+          examPerformance,
+
+        subjects:
+          subjectPerformance,
+
+        topics:
+          topicPerformance,
+
+        weakSubjects,
+
+        weakTopics,
+
         bestExam,
+
         lowestExam,
       },
     });
@@ -343,7 +670,7 @@ const getStudentDetailedPerformance = async (req, res) => {
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       message:
         "Failed to load student performance.",
     });
