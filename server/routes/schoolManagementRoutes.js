@@ -28,8 +28,11 @@ const {
 
 const {
   getTeacherDashboard,
-  getStudentPerformance
 } = require("../controllers/schoolTeacherDashboardController");
+
+const {
+  getStudentDetailedPerformance,
+} = require("../controllers/schoolStudentPerformanceController");
 
 const { protect } = require("../middleware/authMiddleware");
 const { requireSchoolRole } = require("../middleware/schoolMiddleware");
@@ -182,8 +185,9 @@ router.get(
 );
 
 router.get(
-  "/:schoolId/teacher-dashboard/students/:studentId",
+  "/:schoolId/teacher-dashboard/students/:studentId/performance",
   protect,
-  getStudentPerformance
+  requireSchoolRole(["teacher"]),
+  getStudentDetailedPerformance
 );
 module.exports = router;

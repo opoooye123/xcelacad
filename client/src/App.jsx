@@ -29,8 +29,7 @@ import CreateSchoolExam from "./pages/school/CreateSchoolExam";
 import SchoolExams from "./pages/school/SchoolExams";
 import StudentSchoolExams from "./pages/school/StudentSchoolExams";
 import StudentSchoolExamDetails from "./pages/school/StudentSchoolExamDetails";
-import TeacherStudentPerformance from "./pages/TeacherStudentPerformance";
-
+import TeacherStudentPerformance from "./pages/school/TeacherStudentPerformance";
 // ==========================================================
 // ROUTES
 // ==========================================================
@@ -294,7 +293,7 @@ const App = () => (
   element={<TeacherDashboard />}
 />
 <Route
-  path="/school/:schoolId/teacher/students/:studentId"
+  path="/school/:schoolId/teacher/students/:studentId/performance"
   element={<TeacherStudentPerformance />}
 />
 <Route

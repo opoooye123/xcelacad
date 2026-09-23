@@ -518,10 +518,14 @@ const TeacherDashboard = () => {
 
                     return (
                       <tr
-                        key={
-                          item.student?._id
-                        }
-                      >
+  key={item.student?._id}
+  style={{ cursor: "pointer" }}
+  onClick={() =>
+    navigate(
+      `/school/${schoolId}/teacher/students/${item.student?._id}/performance`
+    )
+  }
+>
                         <td
                           style={
                             styles.td
@@ -852,10 +856,10 @@ const TeacherDashboard = () => {
     cursor: "pointer",
   }}
   onClick={() =>
-    navigate(
-      `/school/${schoolId}/teacher/students/${membership.user?._id}`
-    )
-  }
+  navigate(
+    `/school/${schoolId}/teacher/students/${membership.user?._id}/performance`
+  )
+}
 >
                           {membership.user
                             ?.avatar ? (
