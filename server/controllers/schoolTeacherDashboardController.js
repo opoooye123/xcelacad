@@ -1,6 +1,6 @@
 const SchoolMembership = require("../models/SchoolMembership");
 const TeacherAssignment = require("../models/TeacherAssignment");
-
+const Exam = require("../models/Exam");
 // ==========================================
 // GET TEACHER DASHBOARD
 // ==========================================
