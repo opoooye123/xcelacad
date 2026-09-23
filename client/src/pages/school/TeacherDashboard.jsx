@@ -846,13 +846,17 @@ const TeacherDashboard = () => {
                     {group.students.map(
                       (membership) => (
                         <div
-                          key={
-                            membership._id
-                          }
-                          style={
-                            styles.studentRow
-                          }
-                        >
+  key={membership._id}
+  style={{
+    ...styles.studentRow,
+    cursor: "pointer",
+  }}
+  onClick={() =>
+    navigate(
+      `/school/${schoolId}/teacher/students/${membership.user?._id}`
+    )
+  }
+>
                           {membership.user
                             ?.avatar ? (
                             <img

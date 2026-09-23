@@ -359,7 +359,271 @@ const getTeacherDashboard = async (req, res) => {
   }
 };
 
+// ==========================================
+// GET DETAILED STUDENT PERFORMANCE
+// ==========================================
+const getStudentPerformance = async (req, res) => {
+  try {
+    const { schoolId, studentId } = req.params;
+    const teacherId = req.user._id;
+
+    // ==========================================
+    // 1. GET TEACHER'S ACTIVE ASSIGNMENTS
+    // ==========================================
+
+    const assignments = await TeacherAssignment.find({
+      school: schoolId,
+      teacher: teacherId,
+      isActive: true,
+    }).select("class");
+
+    const classIds = [
+      ...new Set(
+        assignments
+          .map((assignment) =>
+            assignment.class?.toString()
+          )
+          .filter(Boolean)
+      ),
+    ];
+
+    if (classIds.length === 0) {
+      return res.status(403).json({
+        message:
+          "You do not have any active class assignments in this school.",
+      });
+    }
+
+    // ==========================================
+    // 2. VERIFY STUDENT BELONGS TO TEACHER'S CLASS
+    // ==========================================
+
+    const studentMembership =
+      await SchoolMembership.findOne({
+        school: schoolId,
+        user: studentId,
+        role: "student",
+        isActive: true,
+        class: { $in: classIds },
+      })
+        .populate(
+          "user",
+          "name email avatar"
+        )
+        .populate(
+          "class",
+          "name level section academicSession"
+        );
+
+    if (!studentMembership) {
+      return res.status(404).json({
+        message:
+          "Student not found in one of your assigned classes.",
+      });
+    }
+
+    // ==========================================
+    // 3. GET SCHOOL EXAMS FOR THIS CLASS
+    // ==========================================
+
+    const schoolExams = await Exam.find({
+      school: schoolId,
+      schoolClass: studentMembership.class._id,
+      isActive: true,
+      isPractice: false,
+    })
+      .populate("subjects", "name slug")
+      .populate(
+        "schoolClass",
+        "name level section academicSession"
+      )
+      .sort({
+        createdAt: -1,
+      });
+
+    // ==========================================
+    // 4. GET STUDENT'S SUBMITTED ATTEMPTS
+    // ==========================================
+
+    const examIds = schoolExams.map(
+      (exam) => exam._id
+    );
+
+    let attempts = [];
+
+    if (examIds.length > 0) {
+      attempts = await ExamAttempt.find({
+        student: studentId,
+        exam: { $in: examIds },
+        status: "submitted",
+      })
+        .populate(
+          "exam",
+          "title totalMarks duration subjects schoolClass createdAt"
+        )
+        .sort({
+          submittedAt: -1,
+        });
+    }
+
+    // ==========================================
+    // 5. CALCULATE OVERALL PERFORMANCE
+    // ==========================================
+
+    let totalScore = 0;
+    let totalMarks = 0;
+
+    attempts.forEach((attempt) => {
+      totalScore += Number(
+        attempt.score || 0
+      );
+
+      totalMarks += Number(
+        attempt.totalMarks || 0
+      );
+    });
+
+    const overallAverage =
+      totalMarks > 0
+        ? Number(
+            (
+              (totalScore / totalMarks) *
+              100
+            ).toFixed(2)
+          )
+        : 0;
+
+    // ==========================================
+    // 6. BEST / LOWEST PERFORMANCE
+    // ==========================================
+
+    let bestScore = null;
+    let lowestScore = null;
+
+    const examResults = attempts.map(
+      (attempt) => {
+        const percentage =
+          attempt.totalMarks > 0
+            ? Number(
+                (
+                  (attempt.score /
+                    attempt.totalMarks) *
+                  100
+                ).toFixed(2)
+              )
+            : 0;
+
+        const result = {
+          attemptId: attempt._id,
+
+          exam: attempt.exam,
+
+          score: attempt.score,
+
+          totalMarks: attempt.totalMarks,
+
+          percentage,
+
+          submittedAt:
+            attempt.submittedAt,
+        };
+
+        if (
+          bestScore === null ||
+          percentage > bestScore.percentage
+        ) {
+          bestScore = result;
+        }
+
+        if (
+          lowestScore === null ||
+          percentage < lowestScore.percentage
+        ) {
+          lowestScore = result;
+        }
+
+        return result;
+      }
+    );
+
+    // ==========================================
+    // 7. ATTENTION STATUS
+    // ==========================================
+
+    let performanceStatus = "No Results";
+
+    if (attempts.length > 0) {
+      if (overallAverage < 50) {
+        performanceStatus = "Needs Attention";
+      } else if (overallAverage < 70) {
+        performanceStatus = "Needs Improvement";
+      } else {
+        performanceStatus = "Good Performance";
+      }
+    }
+
+    // ==========================================
+    // 8. RESPONSE
+    // ==========================================
+
+    res.json({
+      student: {
+        membershipId:
+          studentMembership._id,
+
+        id:
+          studentMembership.user._id,
+
+        name:
+          studentMembership.user.name,
+
+        email:
+          studentMembership.user.email,
+
+        avatar:
+          studentMembership.user.avatar,
+
+        class:
+          studentMembership.class,
+      },
+
+      summary: {
+        examCount:
+          schoolExams.length,
+
+        attemptedCount:
+          attempts.length,
+
+        totalScore,
+
+        totalMarks,
+
+        overallAverage,
+
+        bestScore,
+
+        lowestScore,
+
+        performanceStatus,
+      },
+
+      exams: examResults,
+    });
+  } catch (error) {
+    console.error(
+      "Get student performance error:",
+      error
+    );
+
+    res.status(500).json({
+      message:
+        "Failed to load student performance.",
+    });
+  }
+};
+
 module.exports = {
   getTeacherDashboard,
+  getStudentPerformance,
 };
 
