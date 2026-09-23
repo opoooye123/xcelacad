@@ -1054,20 +1054,33 @@ const fetchFullResult = async () => {
           )}
         </div>
 
-        {/* =====================================
-            BOTTOM ACTIONS
-        ====================================== */}
+{/* =====================================
+    BOTTOM ACTIONS
+====================================== */}
 
-        <div style={styles.bottomActions}>
-          <button
-            onClick={() =>
-              navigate("/dashboard")
-            }
-            style={styles.primaryButton}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
+<div style={styles.bottomActions}>
+  {result.school && result.exam?._id && (
+    <button
+      onClick={() =>
+        navigate(
+          `/school/${result.school._id}/student-exams/${result.exam._id}`
+        )
+      }
+      style={styles.secondaryButton}
+    >
+      ← Back to Exam
+    </button>
+  )}
+
+  <button
+    onClick={() =>
+      navigate("/dashboard")
+    }
+    style={styles.primaryButton}
+  >
+    ← Back to Dashboard
+  </button>
+</div>
       </div>
     </div>
   );

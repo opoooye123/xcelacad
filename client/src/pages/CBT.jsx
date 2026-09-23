@@ -1,13 +1,27 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { api, endpoints } from "../lib/api";
 
+const SCHOOL_RETURN_KEY = "xcelSchoolExamReturn";
+
 const CBT = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const { token } = useAuth();
   const { success, error: toastError } = useToast();
 
@@ -21,11 +35,55 @@ const CBT = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Used to prevent duplicate start requests in React StrictMode.
+  // Prevent duplicate start requests in React StrictMode.
   const startedRef = useRef(false);
 
-  // Used to prevent the timer from submitting more than once.
+  // Prevent the timer from submitting more than once.
   const autoSubmittedRef = useRef(false);
+
+  // ----------------------------------------------------------
+  // SCHOOL EXAM RETURN INFORMATION
+  // ----------------------------------------------------------
+
+  /*
+   * When a student starts an exam from:
+   *
+   * /school/:schoolId/student-exams/:examId
+   *
+   * StudentSchoolExamDetails will pass:
+   *
+   * navigate(`/cbt/${examId}`, {
+   *   state: { schoolId }
+   * })
+   *
+   * We store that information in sessionStorage so it
+   * survives the navigation to the result page.
+   */
+
+  const schoolId =
+    location.state?.schoolId ||
+    (() => {
+      try {
+        const stored = sessionStorage.getItem(
+          SCHOOL_RETURN_KEY
+        );
+
+        if (!stored) return null;
+
+        const parsed = JSON.parse(stored);
+
+        return parsed?.schoolId || null;
+      } catch {
+        return null;
+      }
+    })();
+
+  const schoolExamReturn = schoolId
+    ? {
+        schoolId,
+        examId: id,
+      }
+    : null;
 
   // ----------------------------------------------------------
   // START / RESUME EXAM
@@ -39,7 +97,9 @@ const CBT = () => {
     }
 
     if (!token) {
-      setError("Your session has expired. Please log in again.");
+      setError(
+        "Your session has expired. Please log in again."
+      );
       setLoading(false);
       return;
     }
@@ -48,15 +108,36 @@ const CBT = () => {
       setLoading(true);
       setError("");
 
-      const data = await api.post(endpoints.exams.start(id));
+      const data = await api.post(
+        endpoints.exams.start(id)
+      );
 
       if (!data?.attempt) {
-        throw new Error("No exam attempt was returned.");
+        throw new Error(
+          "No exam attempt was returned."
+        );
       }
 
       setAttempt(data.attempt);
 
-      // Restore answers from the server.
+      // ------------------------------------------------------
+      // SAVE SCHOOL RETURN INFORMATION
+      // ------------------------------------------------------
+
+      if (schoolExamReturn?.schoolId) {
+        sessionStorage.setItem(
+          SCHOOL_RETURN_KEY,
+          JSON.stringify({
+            schoolId: schoolExamReturn.schoolId,
+            examId: id,
+          })
+        );
+      }
+
+      // ------------------------------------------------------
+      // RESTORE ANSWERS
+      // ------------------------------------------------------
+
       const restoredAnswers = {};
 
       if (Array.isArray(data.attempt.answers)) {
@@ -68,32 +149,45 @@ const CBT = () => {
               ? answer.question._id
               : answer.question;
 
-          if (questionId && answer.selectedAnswer) {
-            restoredAnswers[questionId] = answer.selectedAnswer;
+          if (
+            questionId &&
+            answer.selectedAnswer
+          ) {
+            restoredAnswers[questionId] =
+              answer.selectedAnswer;
           }
         });
       }
 
       setSelectedAnswers(restoredAnswers);
 
-      // Server sends the authoritative endTime.
-let endTime = null;
+      // ------------------------------------------------------
+      // SERVER-AUTHORITATIVE TIMER
+      // ------------------------------------------------------
 
-if (data.attempt.endTime) {
-  endTime = new Date(data.attempt.endTime).getTime();
-} else if (
-  data.attempt.startedAt &&
-  data.attempt.duration
-) {
-  endTime =
-    new Date(data.attempt.startedAt).getTime() +
-    data.attempt.duration * 60 * 1000;
-}
+      let endTime = null;
+
+      if (data.attempt.endTime) {
+        endTime = new Date(
+          data.attempt.endTime
+        ).getTime();
+      } else if (
+        data.attempt.startedAt &&
+        data.attempt.duration
+      ) {
+        endTime =
+          new Date(
+            data.attempt.startedAt
+          ).getTime() +
+          data.attempt.duration * 60 * 1000;
+      }
 
       if (endTime) {
         const remaining = Math.max(
           0,
-          Math.ceil((endTime - Date.now()) / 1000)
+          Math.ceil(
+            (endTime - Date.now()) / 1000
+          )
         );
 
         setTimeLeft(remaining);
@@ -101,14 +195,23 @@ if (data.attempt.endTime) {
         setTimeLeft(0);
       }
     } catch (requestError) {
-      console.error("Start exam error:", requestError);
+      console.error(
+        "Start exam error:",
+        requestError
+      );
+
       setError(
-        requestError?.message || "Failed to start the examination."
+        requestError?.message ||
+          "Failed to start the examination."
       );
     } finally {
       setLoading(false);
     }
-  }, [id, token]);
+  }, [
+    id,
+    token,
+    schoolExamReturn?.schoolId,
+  ]);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -117,23 +220,29 @@ if (data.attempt.endTime) {
       if (!token) {
         setLoading(false);
       }
+
       return;
     }
 
     startedRef.current = true;
+
     startExam();
   }, [id, token, startExam]);
 
   // ----------------------------------------------------------
-  // CURRENT QUESTION / COUNTS
+  // QUESTIONS / COUNTS
   // ----------------------------------------------------------
 
   const questions = attempt?.questions || [];
+
   const totalQuestions = questions.length;
-  const question = questions[currentQuestion] || null;
+
+  const question =
+    questions[currentQuestion] || null;
 
   const answeredCount = useMemo(
-    () => Object.keys(selectedAnswers).length,
+    () =>
+      Object.keys(selectedAnswers).length,
     [selectedAnswers]
   );
 
@@ -144,27 +253,36 @@ if (data.attempt.endTime) {
 
   const progress =
     totalQuestions > 0
-      ? Math.round((answeredCount / totalQuestions) * 100)
+      ? Math.round(
+          (answeredCount / totalQuestions) * 100
+        )
       : 0;
 
   // ----------------------------------------------------------
-  // TIMER
+  // SUBMIT EXAM
   // ----------------------------------------------------------
 
   const submitExam = useCallback(
     async (automatic = false) => {
-      if (!attempt?._id || submitting) return;
+      if (!attempt?._id || submitting) {
+        return;
+      }
 
       if (!automatic) {
         const confirmed = window.confirm(
           `You have answered ${answeredCount} out of ${totalQuestions} questions.\n\nAre you sure you want to submit your exam?`
         );
 
-        if (!confirmed) return;
+        if (!confirmed) {
+          return;
+        }
       }
 
       if (!token) {
-        setError("Your session has expired. Please log in again.");
+        setError(
+          "Your session has expired. Please log in again."
+        );
+
         return;
       }
 
@@ -173,12 +291,29 @@ if (data.attempt.endTime) {
         setError("");
 
         const data = await api.post(
-          endpoints.attempts.submit(attempt._id)
+          endpoints.attempts.submit(
+            attempt._id
+          )
         );
 
         if (!data?.result) {
           throw new Error(
             "The exam was submitted, but no result was returned."
+          );
+        }
+
+        // ----------------------------------------------------
+        // PRESERVE SCHOOL EXAM RETURN INFORMATION
+        // ----------------------------------------------------
+
+        if (schoolExamReturn?.schoolId) {
+          sessionStorage.setItem(
+            SCHOOL_RETURN_KEY,
+            JSON.stringify({
+              schoolId:
+                schoolExamReturn.schoolId,
+              examId: id,
+            })
           );
         }
 
@@ -188,18 +323,27 @@ if (data.attempt.endTime) {
             : "Exam submitted successfully."
         );
 
-        navigate(`/exam-result/${attempt._id}`, {
-          replace: true,
-        });
+        // Go directly to the existing result route.
+        navigate(
+          `/exam-result/${attempt._id}`,
+          {
+            replace: true,
+          }
+        );
       } catch (requestError) {
-        console.error("Submit exam error:", requestError);
+        console.error(
+          "Submit exam error:",
+          requestError
+        );
 
         setError(
-          requestError?.message || "Failed to submit exam."
+          requestError?.message ||
+            "Failed to submit exam."
         );
 
         toastError(
-          requestError?.message || "Failed to submit exam."
+          requestError?.message ||
+            "Failed to submit exam."
         );
 
         setSubmitting(false);
@@ -214,8 +358,14 @@ if (data.attempt.endTime) {
       navigate,
       success,
       toastError,
+      schoolExamReturn?.schoolId,
+      id,
     ]
   );
+
+  // ----------------------------------------------------------
+  // TIMER
+  // ----------------------------------------------------------
 
   useEffect(() => {
     if (!attempt || submitting) return;
@@ -223,50 +373,84 @@ if (data.attempt.endTime) {
     if (timeLeft <= 0) {
       if (!autoSubmittedRef.current) {
         autoSubmittedRef.current = true;
+
         submitExam(true);
       }
+
       return;
     }
 
     const timer = window.setInterval(() => {
-      setTimeLeft((previous) => Math.max(0, previous - 1));
+      setTimeLeft((previous) =>
+        Math.max(0, previous - 1)
+      );
     }, 1000);
 
-    return () => window.clearInterval(timer);
-  }, [attempt, submitting, timeLeft, submitExam]);
+    return () =>
+      window.clearInterval(timer);
+  }, [
+    attempt,
+    submitting,
+    timeLeft,
+    submitExam,
+  ]);
 
   // ----------------------------------------------------------
   // FORMAT TIMER
   // ----------------------------------------------------------
 
   const formatTime = (seconds) => {
-    const safeSeconds = Math.max(0, Number(seconds) || 0);
+    const safeSeconds = Math.max(
+      0,
+      Number(seconds) || 0
+    );
 
-    const hours = Math.floor(safeSeconds / 3600);
-    const minutes = Math.floor((safeSeconds % 3600) / 60);
-    const remainingSeconds = safeSeconds % 60;
+    const hours = Math.floor(
+      safeSeconds / 3600
+    );
 
-    return `${String(hours).padStart(2, "0")}:${String(
-      minutes
-    ).padStart(2, "0")}:${String(remainingSeconds).padStart(
+    const minutes = Math.floor(
+      (safeSeconds % 3600) / 60
+    );
+
+    const remainingSeconds =
+      safeSeconds % 60;
+
+    return `${String(hours).padStart(
       2,
       "0"
-    )}`;
+    )}:${String(minutes).padStart(
+      2,
+      "0"
+    )}:${String(
+      remainingSeconds
+    ).padStart(2, "0")}`;
   };
 
   // ----------------------------------------------------------
   // SAVE ANSWER
   // ----------------------------------------------------------
 
-  const handleAnswerSelect = async (questionId, answer) => {
-    if (!attempt?._id || submitting || savingAnswer) return;
+  const handleAnswerSelect = async (
+    questionId,
+    answer
+  ) => {
+    if (
+      !attempt?._id ||
+      submitting ||
+      savingAnswer
+    ) {
+      return;
+    }
 
     if (!questionId) {
       setError("Question ID is missing.");
       return;
     }
 
-    if (!["A", "B", "C", "D"].includes(answer)) {
+    if (
+      !["A", "B", "C", "D"].includes(answer)
+    ) {
       setError("Invalid answer selected.");
       return;
     }
@@ -282,17 +466,23 @@ if (data.attempt.endTime) {
       setError("");
 
       await api.post(
-        endpoints.attempts.answer(attempt._id),
+        endpoints.attempts.answer(
+          attempt._id
+        ),
         {
           questionId,
           selectedAnswer: answer,
         }
       );
     } catch (requestError) {
-      console.error("Save answer error:", requestError);
+      console.error(
+        "Save answer error:",
+        requestError
+      );
 
       setError(
-        requestError?.message || "Failed to save answer."
+        requestError?.message ||
+          "Failed to save answer."
       );
 
       toastError(
@@ -305,7 +495,7 @@ if (data.attempt.endTime) {
   };
 
   // ----------------------------------------------------------
-  // NAVIGATION
+  // QUESTION NAVIGATION
   // ----------------------------------------------------------
 
   const goToQuestion = (index) => {
@@ -326,11 +516,15 @@ if (data.attempt.endTime) {
   };
 
   const handlePrevious = () => {
-    goToQuestion(currentQuestion - 1);
+    goToQuestion(
+      currentQuestion - 1
+    );
   };
 
   const handleNext = () => {
-    goToQuestion(currentQuestion + 1);
+    goToQuestion(
+      currentQuestion + 1
+    );
   };
 
   // ----------------------------------------------------------
@@ -343,9 +537,11 @@ if (data.attempt.endTime) {
         <div className="shell flex min-h-[70vh] items-center justify-center">
           <div className="card card-pad w-full max-w-md text-center">
             <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-600" />
+
             <h1 className="text-xl font-bold text-ink">
               Loading examination...
             </h1>
+
             <p className="mt-2 text-sm text-muted">
               Preparing your CBT attempt.
             </p>
@@ -368,11 +564,15 @@ if (data.attempt.endTime) {
               Unable to load examination
             </h1>
 
-            <p className="mt-3 text-danger">{error}</p>
+            <p className="mt-3 text-danger">
+              {error}
+            </p>
 
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() =>
+                navigate("/dashboard")
+              }
               className="btn btn-primary mt-6"
             >
               Back to Dashboard
@@ -387,7 +587,11 @@ if (data.attempt.endTime) {
   // NO QUESTIONS
   // ----------------------------------------------------------
 
-  if (!attempt || totalQuestions === 0 || !question) {
+  if (
+    !attempt ||
+    totalQuestions === 0 ||
+    !question
+  ) {
     return (
       <div className="min-h-screen bg-surface py-12">
         <div className="shell flex min-h-[70vh] items-center justify-center">
@@ -397,12 +601,15 @@ if (data.attempt.endTime) {
             </h1>
 
             <p className="mt-3 text-muted">
-              This examination does not contain any questions.
+              This examination does not contain
+              any questions.
             </p>
 
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() =>
+                navigate("/dashboard")
+              }
               className="btn btn-primary mt-6"
             >
               Back to Dashboard
@@ -413,16 +620,31 @@ if (data.attempt.endTime) {
     );
   }
 
+  // ----------------------------------------------------------
+  // CURRENT QUESTION
+  // ----------------------------------------------------------
+
   const questionId = question._id;
-  const currentSelectedAnswer = selectedAnswers[questionId];
+
+  const currentSelectedAnswer =
+    selectedAnswers[questionId];
 
   const timerDanger = timeLeft <= 300;
+
   const timerCritical = timeLeft <= 60;
+
+  // ----------------------------------------------------------
+  // MAIN CBT UI
+  // ----------------------------------------------------------
 
   return (
     <div className="min-h-screen bg-surface py-4 sm:py-6">
       <div className="shell">
-        {/* HEADER */}
+
+        {/* ==========================================
+            HEADER
+        =========================================== */}
+
         <header className="card mb-4 flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-wide text-brand-600">
@@ -430,11 +652,14 @@ if (data.attempt.endTime) {
             </p>
 
             <h1 className="mt-1 truncate text-lg font-bold text-ink sm:text-xl">
-              {attempt.exam?.title || "Examination"}
+              {attempt.exam?.title ||
+                "Examination"}
             </h1>
 
             <p className="mt-1 text-sm text-muted">
-              Question {currentQuestion + 1} of {totalQuestions}
+              Question{" "}
+              {currentQuestion + 1} of{" "}
+              {totalQuestions}
             </p>
           </div>
 
@@ -443,17 +668,23 @@ if (data.attempt.endTime) {
               timerCritical
                 ? "border-danger/30 bg-danger-soft text-danger"
                 : timerDanger
-                  ? "border-warning/30 bg-warning-soft text-warning"
-                  : "border-line bg-surface-2 text-ink"
+                ? "border-warning/30 bg-warning-soft text-warning"
+                : "border-line bg-surface-2 text-ink"
             }`}
             aria-label="Time remaining"
           >
-            {timerCritical ? "⚠ " : "⏱ "}
+            {timerCritical
+              ? "⚠ "
+              : "⏱ "}
+
             {formatTime(timeLeft)}
           </div>
         </header>
 
-        {/* ERROR */}
+        {/* ==========================================
+            ERROR
+        =========================================== */}
+
         {error && (
           <div className="mb-4 rounded-md border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger">
             {error}
@@ -461,21 +692,34 @@ if (data.attempt.endTime) {
         )}
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-          {/* QUESTION */}
+
+          {/* ========================================
+              QUESTION
+          ========================================= */}
+
           <main className="card card-pad">
+
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span className="badge badge-brand">
-                Question {currentQuestion + 1} of {totalQuestions}
+                Question{" "}
+                {currentQuestion + 1} of{" "}
+                {totalQuestions}
               </span>
 
               <span
                 className={`text-sm ${
-                  savingAnswer ? "text-warning" : "text-muted"
+                  savingAnswer
+                    ? "text-warning"
+                    : "text-muted"
                 }`}
               >
-                {savingAnswer ? "Saving answer..." : "Answer saved automatically"}
+                {savingAnswer
+                  ? "Saving answer..."
+                  : "Answer saved automatically"}
               </span>
             </div>
+
+            {/* QUESTION TEXT */}
 
             <div className="mt-6">
               <h2 className="text-xl font-bold leading-relaxed text-ink sm:text-2xl">
@@ -484,26 +728,37 @@ if (data.attempt.endTime) {
             </div>
 
             {/* OPTIONS */}
+
             <div className="mt-7 space-y-3">
-              {Object.entries(question.options || {}).map(
+              {Object.entries(
+                question.options || {}
+              ).map(
                 ([letter, text]) => {
                   const isSelected =
-                    currentSelectedAnswer === letter;
+                    currentSelectedAnswer ===
+                    letter;
 
                   return (
                     <button
                       key={letter}
                       type="button"
-                      disabled={submitting || savingAnswer}
+                      disabled={
+                        submitting ||
+                        savingAnswer
+                      }
                       onClick={() =>
-                        handleAnswerSelect(questionId, letter)
+                        handleAnswerSelect(
+                          questionId,
+                          letter
+                        )
                       }
                       className={`flex w-full items-start gap-3 rounded-md border p-4 text-left transition ${
                         isSelected
                           ? "border-brand-500 bg-brand-50 ring-2 ring-brand-100"
                           : "border-line bg-surface hover:border-brand-300 hover:bg-brand-50/40"
                       } ${
-                        submitting || savingAnswer
+                        submitting ||
+                        savingAnswer
                           ? "cursor-not-allowed opacity-70"
                           : "cursor-pointer"
                       }`}
@@ -527,12 +782,16 @@ if (data.attempt.endTime) {
               )}
             </div>
 
-            {/* NAVIGATION */}
+            {/* QUESTION NAVIGATION */}
+
             <div className="mt-8 flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:justify-between">
               <button
                 type="button"
                 onClick={handlePrevious}
-                disabled={currentQuestion === 0 || submitting}
+                disabled={
+                  currentQuestion === 0 ||
+                  submitting
+                }
                 className="btn btn-outline"
               >
                 ← Previous
@@ -542,7 +801,8 @@ if (data.attempt.endTime) {
                 type="button"
                 onClick={handleNext}
                 disabled={
-                  currentQuestion === totalQuestions - 1 ||
+                  currentQuestion ===
+                    totalQuestions - 1 ||
                   submitting
                 }
                 className="btn btn-primary"
@@ -551,105 +811,159 @@ if (data.attempt.endTime) {
               </button>
             </div>
 
+            {/* SUBMIT */}
+
             <button
               type="button"
-              onClick={() => submitExam(false)}
-              disabled={submitting || savingAnswer}
+              onClick={() =>
+                submitExam(false)
+              }
+              disabled={
+                submitting ||
+                savingAnswer
+              }
               className="btn btn-primary mt-4 w-full"
             >
               {submitting
                 ? "Submitting Exam..."
                 : savingAnswer
-                  ? "Saving answer..."
-                  : "Submit Exam"}
+                ? "Saving answer..."
+                : "Submit Exam"}
             </button>
           </main>
 
-          {/* QUESTION NAVIGATOR */}
+          {/* ========================================
+              QUESTION NAVIGATOR
+          ========================================= */}
+
           <aside className="card h-fit p-4 lg:sticky lg:top-4">
+
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-ink">Questions</h2>
+              <h2 className="font-bold text-ink">
+                Questions
+              </h2>
 
               <span className="text-sm font-semibold text-muted">
-                {answeredCount}/{totalQuestions}
+                {answeredCount}/
+                {totalQuestions}
               </span>
             </div>
 
             {/* PROGRESS */}
+
             <div className="mt-4">
               <div className="mb-2 flex items-center justify-between text-xs text-muted">
                 <span>Progress</span>
-                <span>{progress}%</span>
+
+                <span>
+                  {progress}%
+                </span>
               </div>
 
               <div className="h-2 overflow-hidden rounded-full bg-surface-2">
                 <div
                   className="h-full rounded-full bg-brand-600 transition-all"
-                  style={{ width: `${progress}%` }}
+                  style={{
+                    width: `${progress}%`,
+                  }}
                 />
               </div>
             </div>
 
-            {/* NUMBERS */}
-            <div className="mt-5 grid grid-cols-4 gap-2">
-              {questions.map((item, index) => {
-                const answered = Boolean(
-                  selectedAnswers[item._id]
-                );
-                const isCurrent = currentQuestion === index;
+            {/* QUESTION NUMBERS */}
 
-                return (
-                  <button
-                    key={item._id}
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => goToQuestion(index)}
-                    className={`grid aspect-square place-items-center rounded-md border text-sm font-semibold transition ${
-                      isCurrent
-                        ? "border-brand-600 bg-brand-600 text-white"
-                        : answered
+            <div className="mt-5 grid grid-cols-4 gap-2">
+              {questions.map(
+                (item, index) => {
+                  const answered =
+                    Boolean(
+                      selectedAnswers[
+                        item._id
+                      ]
+                    );
+
+                  const isCurrent =
+                    currentQuestion ===
+                    index;
+
+                  return (
+                    <button
+                      key={item._id}
+                      type="button"
+                      disabled={submitting}
+                      onClick={() =>
+                        goToQuestion(
+                          index
+                        )
+                      }
+                      className={`grid aspect-square place-items-center rounded-md border text-sm font-semibold transition ${
+                        isCurrent
+                          ? "border-brand-600 bg-brand-600 text-white"
+                          : answered
                           ? "border-success/30 bg-success-soft text-success"
                           : "border-line bg-surface text-muted hover:border-brand-300"
-                    }`}
-                    aria-label={`Go to question ${index + 1}`}
-                  >
-                    {index + 1}
-                  </button>
-                );
-              })}
+                      }`}
+                      aria-label={`Go to question ${
+                        index + 1
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  );
+                }
+              )}
             </div>
 
             {/* LEGEND */}
+
             <div className="mt-5 space-y-2 border-t border-line pt-4 text-sm">
               <p className="flex justify-between">
-                <span className="text-muted">Answered</span>
+                <span className="text-muted">
+                  Answered
+                </span>
+
                 <strong className="text-success">
                   {answeredCount}
                 </strong>
               </p>
 
               <p className="flex justify-between">
-                <span className="text-muted">Unanswered</span>
+                <span className="text-muted">
+                  Unanswered
+                </span>
+
                 <strong className="text-muted">
                   {unansweredCount}
                 </strong>
               </p>
 
               <p className="flex justify-between">
-                <span className="text-muted">Current</span>
+                <span className="text-muted">
+                  Current
+                </span>
+
                 <strong className="text-brand-600">
                   {currentQuestion + 1}
                 </strong>
               </p>
             </div>
 
+            {/* SIDEBAR SUBMIT */}
+
             <button
               type="button"
-              onClick={() => submitExam(false)}
-              disabled={submitting || savingAnswer}
+              onClick={() =>
+                submitExam(false)
+              }
+              disabled={
+                submitting ||
+                savingAnswer
+              }
               className="btn btn-primary mt-5 w-full"
             >
-              {submitting ? "Submitting..." : "Submit Exam"}
+              {submitting
+                ? "Submitting..."
+                : "Submit Exam"}
             </button>
           </aside>
         </div>
