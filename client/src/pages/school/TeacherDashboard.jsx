@@ -45,7 +45,8 @@ const TeacherDashboard = () => {
       console.error("Teacher dashboard error:", error);
 
       setError(
-        error.message || "Failed to load teacher dashboard."
+        error.message ||
+          "Failed to load teacher dashboard."
       );
     } finally {
       setLoading(false);
@@ -93,11 +94,9 @@ const TeacherDashboard = () => {
         <div style={styles.errorCard}>
           <div style={styles.errorIcon}>!</div>
 
-          <h2 style={styles.errorTitle}>
-            Unable to load dashboard
-          </h2>
+          <h2>Unable to load dashboard</h2>
 
-          <p style={styles.errorText}>{error}</p>
+          <p>{error}</p>
 
           <button
             onClick={fetchDashboard}
@@ -121,20 +120,25 @@ const TeacherDashboard = () => {
     performance = {},
   } = data;
 
-  const performanceData = {
-    students: performance.students || [],
-    studentsNeedingAttention:
-      performance.studentsNeedingAttention || [],
-    classes: performance.classes || [],
-    recentExams: performance.recentExams || [],
-  };
+  const studentPerformance =
+    performance.students || [];
+
+  const studentsNeedingAttention =
+    performance.studentsNeedingAttention || [];
+
+  const classPerformance =
+    performance.classes || [];
+
+  const recentExams =
+    performance.recentExams || [];
 
   return (
     <div style={styles.page}>
       {/* ==========================================
           HEADER
       ========================================== */}
-      <header style={styles.header}>
+
+      <div style={styles.header}>
         <div style={styles.headerLeft}>
           <button
             onClick={() =>
@@ -150,8 +154,7 @@ const TeacherDashboard = () => {
           </h1>
 
           <p style={styles.subtitle}>
-            Welcome back,{" "}
-            <strong>{teacher.name}</strong>
+            Welcome back, {teacher.name}
           </p>
         </div>
 
@@ -192,142 +195,12 @@ const TeacherDashboard = () => {
             </div>
           )}
         </div>
-      </header>
+      </div>
 
       {/* ==========================================
-          SUMMARY CARDS
+          PERFORMANCE SUMMARY
       ========================================== */}
-      <section style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <div
-            style={{
-              ...styles.statIcon,
-              ...styles.blueIcon,
-            }}
-          >
-            📚
-          </div>
 
-          <div>
-            <p style={styles.statLabel}>
-              Assignments
-            </p>
-
-            <h2 style={styles.statValue}>
-              {summary.assignmentCount || 0}
-            </h2>
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div
-            style={{
-              ...styles.statIcon,
-              ...styles.purpleIcon,
-            }}
-          >
-            🏫
-          </div>
-
-          <div>
-            <p style={styles.statLabel}>
-              Classes
-            </p>
-
-            <h2 style={styles.statValue}>
-              {summary.classCount || 0}
-            </h2>
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div
-            style={{
-              ...styles.statIcon,
-              ...styles.greenIcon,
-            }}
-          >
-            👨‍🎓
-          </div>
-
-          <div>
-            <p style={styles.statLabel}>
-              Students
-            </p>
-
-            <h2 style={styles.statValue}>
-              {summary.studentCount || 0}
-            </h2>
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div
-            style={{
-              ...styles.statIcon,
-              ...styles.orangeIcon,
-            }}
-          >
-            📝
-          </div>
-
-          <div>
-            <p style={styles.statLabel}>
-              School Exams
-            </p>
-
-            <h2 style={styles.statValue}>
-              {summary.examCount || 0}
-            </h2>
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div
-            style={{
-              ...styles.statIcon,
-              ...styles.redIcon,
-            }}
-          >
-            📊
-          </div>
-
-          <div>
-            <p style={styles.statLabel}>
-              Completed Attempts
-            </p>
-
-            <h2 style={styles.statValue}>
-              {summary.attemptCount || 0}
-            </h2>
-          </div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div
-            style={{
-              ...styles.statIcon,
-              ...styles.tealIcon,
-            }}
-          >
-            🎯
-          </div>
-
-          <div>
-            <p style={styles.statLabel}>
-              Average Performance
-            </p>
-
-            <h2 style={styles.statValue}>
-              {summary.overallAverage || 0}%
-            </h2>
-          </div>
-        </div>
-      </section>
-
-      {/* ==========================================
-          PERFORMANCE OVERVIEW
-      ========================================== */}
       <section style={styles.section}>
         <div style={styles.sectionHeader}>
           <div>
@@ -336,347 +209,492 @@ const TeacherDashboard = () => {
             </h2>
 
             <p style={styles.sectionSubtitle}>
-              Monitor how your students are performing
-              in school exams.
+              A quick view of your students'
+              academic performance
             </p>
           </div>
         </div>
 
-        <div style={styles.performanceGrid}>
-          {/* CLASS PERFORMANCE */}
-          <div style={styles.performanceCard}>
-            <div style={styles.cardHeader}>
-              <div>
-                <h3 style={styles.performanceTitle}>
-                  Class Performance
-                </h3>
+        <div style={styles.statsGrid}>
+          <StatCard
+            icon="📚"
+            label="Assignments"
+            value={summary.assignmentCount || 0}
+          />
 
-                <p style={styles.cardDescription}>
-                  Average performance across your
-                  assigned classes
-                </p>
-              </div>
+          <StatCard
+            icon="🏫"
+            label="Classes"
+            value={summary.classCount || 0}
+          />
 
-              <div style={styles.cardIcon}>
-                📈
-              </div>
-            </div>
+          <StatCard
+            icon="👨‍🎓"
+            label="Students"
+            value={summary.studentCount || 0}
+          />
 
-            {performanceData.classes.length ===
-            0 ? (
-              <div style={styles.noData}>
-                <div style={styles.noDataIcon}>
-                  📊
-                </div>
+          <StatCard
+            icon="📝"
+            label="School Exams"
+            value={summary.examCount || 0}
+          />
 
-                <p>
-                  No exam performance available yet.
-                </p>
-              </div>
-            ) : (
-              <div style={styles.performanceList}>
-                {performanceData.classes.map(
-                  (item) => (
-                    <div
-                      key={item.class?._id}
-                      style={styles.classPerformanceItem}
-                    >
-                      <div
-                        style={styles.performanceInfo}
-                      >
-                        <p
-                          style={
-                            styles.performanceName
-                          }
-                        >
-                          {item.class?.name ||
-                            "Unknown Class"}
-                        </p>
+          <StatCard
+            icon="📊"
+            label="Attempts"
+            value={summary.attemptCount || 0}
+          />
 
-                        <p
-                          style={
-                            styles.performanceMeta
-                          }
-                        >
-                          {item.attempts || 0} exam
-                          {item.attempts === 1
-                            ? ""
-                            : "s"} attempted
-                        </p>
-                      </div>
-
-                      <div
-                        style={
-                          styles.percentageContainer
-                        }
-                      >
-                        <strong
-                          style={
-                            styles.performancePercentage
-                          }
-                        >
-                          {item.percentage || 0}%
-                        </strong>
-
-                        <div
-                          style={
-                            styles.progressTrack
-                          }
-                        >
-                          <div
-                            style={{
-                              ...styles.progressBar,
-                              width: `${Math.min(
-                                item.percentage || 0,
-                                100
-                              )}%`,
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* STUDENTS NEEDING ATTENTION */}
-          <div style={styles.performanceCard}>
-            <div style={styles.cardHeader}>
-              <div>
-                <h3 style={styles.performanceTitle}>
-                  Students Needing Attention
-                </h3>
-
-                <p style={styles.cardDescription}>
-                  Students currently below 50%
-                  average
-                </p>
-              </div>
-
-              <div style={styles.cardIcon}>
-                ⚠️
-              </div>
-            </div>
-
-            {performanceData.studentsNeedingAttention
-              .length === 0 ? (
-              <div style={styles.goodState}>
-                <div style={styles.goodIcon}>
-                  ✓
-                </div>
-
-                <h4 style={styles.goodTitle}>
-                  No students flagged
-                </h4>
-
-                <p style={styles.goodText}>
-                  No students are currently below
-                  the 50% performance threshold.
-                </p>
-              </div>
-            ) : (
-              <div style={styles.performanceList}>
-                {performanceData.studentsNeedingAttention
-                  .slice(0, 8)
-                  .map((item) => (
-                    <div
-                      key={item.student?._id}
-                      style={styles.attentionRow}
-                    >
-                      <div
-                        style={
-                          styles.studentPerformanceInfo
-                        }
-                      >
-                        {item.student?.avatar ? (
-                          <img
-                            src={item.student.avatar}
-                            alt={item.student.name}
-                            style={
-                              styles.smallStudentAvatar
-                            }
-                          />
-                        ) : (
-                          <div
-                            style={
-                              styles.smallStudentAvatarPlaceholder
-                            }
-                          >
-                            {item.student?.name
-                              ?.charAt(0)
-                              ?.toUpperCase()}
-                          </div>
-                        )}
-
-                        <div>
-                          <p
-                            style={
-                              styles.performanceName
-                            }
-                          >
-                            {item.student?.name ||
-                              "Unknown Student"}
-                          </p>
-
-                          <p
-                            style={
-                              styles.performanceMeta
-                            }
-                          >
-                            {item.attempts || 0} exam
-                            {item.attempts === 1
-                              ? ""
-                              : "s"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span
-                        style={
-                          styles.warningPercentage
-                        }
-                      >
-                        {item.percentage || 0}%
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
+          <StatCard
+            icon="🎯"
+            label="Overall Average"
+            value={`${summary.overallAverage || 0}%`}
+            highlight
+          />
         </div>
       </section>
 
       {/* ==========================================
-          RECENT EXAM ACTIVITY
+          ATTENTION + CLASS PERFORMANCE
       ========================================== */}
-      <section style={styles.section}>
-        <div style={styles.sectionHeader}>
-          <div>
-            <h2 style={styles.sectionTitle}>
-              Recent Exam Activity
-            </h2>
 
-            <p style={styles.sectionSubtitle}>
-              Latest submissions from your students.
-            </p>
-          </div>
+      <div style={styles.twoColumnGrid}>
+        {/* STUDENTS NEEDING ATTENTION */}
 
-          {performanceData.recentExams.length >
-            0 && (
-            <button
-              onClick={() =>
-                navigate(
-                  `/school/${schoolId}/exams`
-                )
-              }
-              style={styles.viewButton}
-            >
-              View Exams →
-            </button>
-          )}
-        </div>
+        <section style={styles.card}>
+          <div style={styles.cardHeader}>
+            <div>
+              <h2 style={styles.cardTitle}>
+                Students Needing Attention
+              </h2>
 
-        {performanceData.recentExams.length ===
-        0 ? (
-          <div style={styles.emptyCard}>
-            <div style={styles.emptyIcon}>
-              📝
+              <p style={styles.cardSubtitle}>
+                Students currently below 50%
+              </p>
             </div>
 
-            <h3 style={styles.emptyTitle}>
-              No exam activity yet
-            </h3>
-
-            <p>
-              Student exam submissions will appear
-              here once they complete school exams.
-            </p>
+            <span style={styles.warningBadge}>
+              {studentsNeedingAttention.length}
+            </span>
           </div>
-        ) : (
-          <div style={styles.activityCard}>
-            {performanceData.recentExams.map(
-              (item) => (
-                <div
-                  key={item.attemptId}
-                  style={styles.activityRow}
-                >
+
+          {studentsNeedingAttention.length === 0 ? (
+            <div style={styles.successEmpty}>
+              <div style={styles.successIcon}>
+                ✓
+              </div>
+
+              <h3>No students flagged</h3>
+
+              <p>
+                No assessed students are currently
+                below 50%.
+              </p>
+            </div>
+          ) : (
+            <div style={styles.performanceList}>
+              {studentsNeedingAttention
+                .slice(0, 8)
+                .map((item) => (
                   <div
-                    style={styles.activityStudent}
+                    key={
+                      item.student?._id
+                    }
+                    style={styles.performanceRow}
                   >
-                    {item.student?.avatar ? (
-                      <img
-                        src={item.student.avatar}
-                        alt={item.student.name}
-                        style={
-                          styles.activityAvatar
-                        }
-                      />
-                    ) : (
-                      <div
-                        style={
-                          styles.activityAvatarPlaceholder
-                        }
-                      >
-                        {item.student?.name
-                          ?.charAt(0)
-                          ?.toUpperCase()}
+                    <div
+                      style={
+                        styles.performanceStudent
+                      }
+                    >
+                      {item.student?.avatar ? (
+                        <img
+                          src={item.student.avatar}
+                          alt={
+                            item.student.name
+                          }
+                          style={
+                            styles.smallAvatar
+                          }
+                        />
+                      ) : (
+                        <div
+                          style={
+                            styles.smallAvatarPlaceholder
+                          }
+                        >
+                          {item.student?.name
+                            ?.charAt(0)
+                            ?.toUpperCase()}
+                        </div>
+                      )}
+
+                      <div>
+                        <p
+                          style={
+                            styles.studentName
+                          }
+                        >
+                          {item.student?.name ||
+                            "Unknown Student"}
+                        </p>
+
+                        <p
+                          style={
+                            styles.mutedText
+                          }
+                        >
+                          {item.attempts} exam
+                          {item.attempts !== 1
+                            ? "s"
+                            : ""}
+                        </p>
                       </div>
-                    )}
-
-                    <div>
-                      <p
-                        style={styles.studentName}
-                      >
-                        {item.student?.name ||
-                          "Unknown Student"}
-                      </p>
-
-                      <p
-                        style={styles.examName}
-                      >
-                        {item.exam?.title ||
-                          "School Exam"}
-                      </p>
                     </div>
-                  </div>
-
-                  <div
-                    style={styles.activityClass}
-                  >
-                    {item.exam?.schoolClass
-                      ?.name || "Class"}
-                  </div>
-
-                  <div
-                    style={styles.activityScore}
-                  >
-                    <strong>
-                      {item.score || 0}/
-                      {item.totalMarks || 0}
-                    </strong>
 
                     <span
                       style={
-                        item.percentage < 50
-                          ? styles.scoreWarning
-                          : styles.scoreGood
+                        styles.dangerScore
                       }
                     >
-                      {item.percentage || 0}%
+                      {item.percentage}%
                     </span>
                   </div>
+                ))}
+            </div>
+          )}
+        </section>
+
+        {/* CLASS PERFORMANCE */}
+
+        <section style={styles.card}>
+          <div style={styles.cardHeader}>
+            <div>
+              <h2 style={styles.cardTitle}>
+                Class Performance
+              </h2>
+
+              <p style={styles.cardSubtitle}>
+                Average performance by class
+              </p>
+            </div>
+          </div>
+
+          {classPerformance.length === 0 ? (
+            <div style={styles.emptySmall}>
+              No submitted school exam attempts yet.
+            </div>
+          ) : (
+            <div style={styles.classPerformanceList}>
+              {classPerformance.map((item) => (
+                <div
+                  key={item.class?._id}
+                  style={styles.classPerformanceItem}
+                >
+                  <div style={styles.classInfo}>
+                    <strong>
+                      {item.class?.name ||
+                        "Unknown Class"}
+                    </strong>
+
+                    <span>
+                      {item.attempts} attempt
+                      {item.attempts !== 1
+                        ? "s"
+                        : ""}
+                    </span>
+                  </div>
+
+                  <div
+                    style={
+                      styles.progressBackground
+                    }
+                  >
+                    <div
+                      style={{
+                        ...styles.progressFill,
+                        width: `${Math.min(
+                          item.percentage || 0,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+
+                  <div style={styles.classPercentage}>
+                    {item.percentage}%
+                  </div>
                 </div>
-              )
-            )}
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* ==========================================
+          STUDENT PERFORMANCE
+      ========================================== */}
+
+      <section style={styles.card}>
+        <div style={styles.cardHeader}>
+          <div>
+            <h2 style={styles.cardTitle}>
+              Student Performance
+            </h2>
+
+            <p style={styles.cardSubtitle}>
+              Performance across submitted school
+              exams
+            </p>
+          </div>
+        </div>
+
+        {studentPerformance.length === 0 ? (
+          <div style={styles.emptyCard}>
+            <div style={styles.emptyIcon}>
+              📊
+            </div>
+
+            <h3>No performance data yet</h3>
+
+            <p>
+              Student performance will appear here
+              after students submit school exams.
+            </p>
+          </div>
+        ) : (
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>
+                    Student
+                  </th>
+
+                  <th style={styles.th}>
+                    Exams
+                  </th>
+
+                  <th style={styles.th}>
+                    Score
+                  </th>
+
+                  <th style={styles.th}>
+                    Average
+                  </th>
+
+                  <th style={styles.th}>
+                    Status
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {studentPerformance.map(
+                  (item) => {
+                    const percentage =
+                      Number(
+                        item.percentage || 0
+                      );
+
+                    let status =
+                      "Needs attention";
+
+                    let statusStyle =
+                      styles.statusDanger;
+
+                    if (percentage >= 75) {
+                      status = "Strong";
+                      statusStyle =
+                        styles.statusSuccess;
+                    } else if (
+                      percentage >= 50
+                    ) {
+                      status = "Developing";
+                      statusStyle =
+                        styles.statusWarning;
+                    }
+
+                    return (
+                      <tr
+                        key={
+                          item.student?._id
+                        }
+                      >
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
+                          <div
+                            style={
+                              styles.tableStudent
+                            }
+                          >
+                            {item.student
+                              ?.avatar ? (
+                              <img
+                                src={
+                                  item
+                                    .student
+                                    .avatar
+                                }
+                                alt={
+                                  item
+                                    .student
+                                    .name
+                                }
+                                style={
+                                  styles.tableAvatar
+                                }
+                              />
+                            ) : (
+                              <div
+                                style={
+                                  styles.tableAvatarPlaceholder
+                                }
+                              >
+                                {item.student?.name
+                                  ?.charAt(
+                                    0
+                                  )
+                                  ?.toUpperCase()}
+                              </div>
+                            )}
+
+                            <div>
+                              <strong>
+                                {item
+                                  .student
+                                  ?.name ||
+                                  "Unknown"}
+                              </strong>
+
+                              <span
+                                style={
+                                  styles.emailText
+                                }
+                              >
+                                {item
+                                  .student
+                                  ?.email ||
+                                  ""}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
+                          {item.attempts}
+                        </td>
+
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
+                          {item.totalScore} /{" "}
+                          {item.totalMarks}
+                        </td>
+
+                        <td
+                          style={{
+                            ...styles.td,
+                            fontWeight:
+                              "700",
+                          }}
+                        >
+                          {percentage}%
+                        </td>
+
+                        <td
+                          style={
+                            styles.td
+                          }
+                        >
+                          <span
+                            style={
+                              statusStyle
+                            }
+                          >
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
 
       {/* ==========================================
-          MY ASSIGNMENTS
+          RECENT EXAM ACTIVITY
       ========================================== */}
+
+      <section style={styles.card}>
+        <div style={styles.cardHeader}>
+          <div>
+            <h2 style={styles.cardTitle}>
+              Recent Exam Activity
+            </h2>
+
+            <p style={styles.cardSubtitle}>
+              Latest student submissions
+            </p>
+          </div>
+        </div>
+
+        {recentExams.length === 0 ? (
+          <div style={styles.emptySmall}>
+            No recent exam activity.
+          </div>
+        ) : (
+          <div style={styles.activityList}>
+            {recentExams.map((item) => (
+              <div
+                key={item.attemptId}
+                style={styles.activityRow}
+              >
+                <div>
+                  <strong>
+                    {item.student?.name ||
+                      "Unknown Student"}
+                  </strong>
+
+                  <p style={styles.activityExam}>
+                    {item.exam?.title ||
+                      "School Exam"}
+                  </p>
+                </div>
+
+                <div style={styles.activityScore}>
+                  <strong>
+                    {item.percentage}%
+                  </strong>
+
+                  <span>
+                    {item.score} /{" "}
+                    {item.totalMarks}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ==========================================
+          ASSIGNMENTS
+      ========================================== */}
+
       <section style={styles.section}>
         <div style={styles.sectionHeader}>
           <div>
@@ -685,7 +703,7 @@ const TeacherDashboard = () => {
             </h2>
 
             <p style={styles.sectionSubtitle}>
-              Subjects and classes assigned to you.
+              Subjects and classes assigned to you
             </p>
           </div>
         </div>
@@ -696,9 +714,7 @@ const TeacherDashboard = () => {
               📚
             </div>
 
-            <h3 style={styles.emptyTitle}>
-              No teaching assignments yet
-            </h3>
+            <h3>No teaching assignments yet</h3>
 
             <p>
               Your school administrator has not
@@ -738,10 +754,7 @@ const TeacherDashboard = () => {
 
                   <p style={styles.session}>
                     Session:{" "}
-                    {assignment.academicSession ||
-                      assignment.class
-                        ?.academicSession ||
-                      "N/A"}
+                    {assignment.academicSession}
                   </p>
                 </div>
               </div>
@@ -751,8 +764,9 @@ const TeacherDashboard = () => {
       </section>
 
       {/* ==========================================
-          MY STUDENTS
+          STUDENTS
       ========================================== */}
+
       <section style={styles.section}>
         <div style={styles.sectionHeader}>
           <div>
@@ -761,7 +775,7 @@ const TeacherDashboard = () => {
             </h2>
 
             <p style={styles.sectionSubtitle}>
-              Students in the classes you teach.
+              Students in the classes you teach
             </p>
           </div>
         </div>
@@ -773,13 +787,12 @@ const TeacherDashboard = () => {
               👨‍🎓
             </div>
 
-            <h3 style={styles.emptyTitle}>
-              No students found
-            </h3>
+            <h3>No students found</h3>
 
             <p>
-              Students will appear here when they are
-              added to one of your assigned classes.
+              Students will appear here when they
+              are added to one of your assigned
+              classes.
             </p>
           </div>
         ) : (
@@ -787,45 +800,55 @@ const TeacherDashboard = () => {
             {Object.values(groupedStudents).map(
               (group) => (
                 <div
-                  key={group.classInfo?._id}
+                  key={
+                    group.classInfo?._id
+                  }
                   style={styles.classCard}
                 >
-                  <div style={styles.classHeader}>
+                  <div
+                    style={
+                      styles.classHeader
+                    }
+                  >
                     <div>
-                      <h3
-                        style={styles.classTitle}
-                      >
-                        {group.classInfo?.name ||
+                      <h3>
+                        {group.classInfo
+                          ?.name ||
                           "Unknown Class"}
                       </h3>
 
-                      <p
-                        style={styles.classSubtitle}
-                      >
-                        {group.classInfo?.level ||
-                          ""}
+                      <p>
+                        {group.classInfo
+                          ?.level || ""}
 
-                        {group.classInfo?.section
+                        {group.classInfo
+                          ?.section
                           ? ` • ${group.classInfo.section}`
                           : ""}
                       </p>
                     </div>
 
                     <span
-                      style={styles.studentCount}
+                      style={
+                        styles.studentCount
+                      }
                     >
                       {group.students.length}{" "}
-                      {group.students.length === 1
-                        ? "student"
-                        : "students"}
+                      students
                     </span>
                   </div>
 
-                  <div style={styles.studentList}>
+                  <div
+                    style={
+                      styles.studentList
+                    }
+                  >
                     {group.students.map(
                       (membership) => (
                         <div
-                          key={membership._id}
+                          key={
+                            membership._id
+                          }
                           style={
                             styles.studentRow
                           }
@@ -834,10 +857,14 @@ const TeacherDashboard = () => {
                             ?.avatar ? (
                             <img
                               src={
-                                membership.user.avatar
+                                membership
+                                  .user
+                                  .avatar
                               }
                               alt={
-                                membership.user.name
+                                membership
+                                  .user
+                                  .name
                               }
                               style={
                                 styles.studentAvatar
@@ -850,7 +877,9 @@ const TeacherDashboard = () => {
                               }
                             >
                               {membership.user?.name
-                                ?.charAt(0)
+                                ?.charAt(
+                                  0
+                                )
                                 ?.toUpperCase()}
                             </div>
                           )}
@@ -872,7 +901,8 @@ const TeacherDashboard = () => {
                               }
                             >
                               {membership.user
-                                ?.email || ""}
+                                ?.email ||
+                                ""}
                             </p>
                           </div>
                         </div>
@@ -888,6 +918,46 @@ const TeacherDashboard = () => {
     </div>
   );
 };
+
+/* ==========================================
+   STAT CARD
+========================================== */
+
+const StatCard = ({
+  icon,
+  label,
+  value,
+  highlight = false,
+}) => {
+  return (
+    <div
+      style={{
+        ...styles.statCard,
+        ...(highlight
+          ? styles.highlightStatCard
+          : {}),
+      }}
+    >
+      <div style={styles.statIcon}>
+        {icon}
+      </div>
+
+      <div>
+        <p style={styles.statLabel}>
+          {label}
+        </p>
+
+        <h2 style={styles.statValue}>
+          {value}
+        </h2>
+      </div>
+    </div>
+  );
+};
+
+/* ==========================================
+   STYLES
+========================================== */
 
 const styles = {
   page: {
@@ -909,9 +979,9 @@ const styles = {
   },
 
   spinner: {
-    width: "38px",
-    height: "38px",
-    border: "4px solid #e5e7eb",
+    width: "36px",
+    height: "36px",
+    border: "4px solid #ddd",
     borderTop:
       "4px solid #2563eb",
     borderRadius: "50%",
@@ -920,7 +990,6 @@ const styles = {
   },
 
   loadingText: {
-    marginTop: "14px",
     color: "#6b7280",
   },
 
@@ -928,14 +997,14 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "24px",
-    marginBottom: "32px",
+    gap: "20px",
+    marginBottom: "36px",
     flexWrap: "wrap",
   },
 
   headerLeft: {
     flex: 1,
-    minWidth: "260px",
+    minWidth: "250px",
   },
 
   headerRight: {
@@ -949,23 +1018,20 @@ const styles = {
     border: "none",
     background: "transparent",
     padding: 0,
-    marginBottom: "10px",
+    marginBottom: "12px",
     cursor: "pointer",
     color: "#2563eb",
     fontSize: "14px",
-    fontWeight: "600",
   },
 
   title: {
     margin: 0,
     fontSize: "32px",
-    lineHeight: 1.2,
-    color: "#111827",
+    fontWeight: "700",
   },
 
   subtitle: {
     marginTop: "8px",
-    marginBottom: 0,
     color: "#6b7280",
     fontSize: "15px",
   },
@@ -973,23 +1039,22 @@ const styles = {
   createButton: {
     border: "none",
     background: "#2563eb",
-    color: "white",
+    color: "#fff",
     padding: "11px 16px",
     borderRadius: "9px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "14px",
   },
 
   secondaryButton: {
-    border: "1px solid #d1d5db",
-    background: "white",
+    border:
+      "1px solid #d1d5db",
+    background: "#fff",
     color: "#374151",
-    padding: "10px 16px",
+    padding: "10px 15px",
     borderRadius: "9px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "14px",
   },
 
   avatar: {
@@ -997,9 +1062,6 @@ const styles = {
     height: "52px",
     borderRadius: "50%",
     objectFit: "cover",
-    border: "3px solid white",
-    boxShadow:
-      "0 2px 8px rgba(0,0,0,0.08)",
   },
 
   avatarPlaceholder: {
@@ -1007,12 +1069,30 @@ const styles = {
     height: "52px",
     borderRadius: "50%",
     background: "#2563eb",
-    color: "white",
+    color: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "21px",
-    fontWeight: "bold",
+    fontWeight: "700",
+  },
+
+  section: {
+    marginBottom: "38px",
+  },
+
+  sectionHeader: {
+    marginBottom: "18px",
+  },
+
+  sectionTitle: {
+    margin: 0,
+    fontSize: "22px",
+  },
+
+  sectionSubtitle: {
+    margin: "6px 0 0",
+    color: "#6b7280",
   },
 
   statsGrid: {
@@ -1020,54 +1100,27 @@ const styles = {
     gridTemplateColumns:
       "repeat(auto-fit, minmax(190px, 1fr))",
     gap: "16px",
-    marginBottom: "42px",
   },
 
   statCard: {
-    background: "white",
+    background: "#fff",
     borderRadius: "14px",
-    padding: "19px",
+    padding: "20px",
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "15px",
     boxShadow:
-      "0 2px 10px rgba(0,0,0,0.045)",
-    border: "1px solid #f0f1f5",
+      "0 2px 10px rgba(0,0,0,0.05)",
   },
 
-  statIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "22px",
-    flexShrink: 0,
-  },
-
-  blueIcon: {
+  highlightStatCard: {
+    border:
+      "1px solid #bfdbfe",
     background: "#eff6ff",
   },
 
-  purpleIcon: {
-    background: "#f5f3ff",
-  },
-
-  greenIcon: {
-    background: "#ecfdf5",
-  },
-
-  orangeIcon: {
-    background: "#fff7ed",
-  },
-
-  redIcon: {
-    background: "#fef2f2",
-  },
-
-  tealIcon: {
-    background: "#f0fdfa",
+  statIcon: {
+    fontSize: "28px",
   },
 
   statLabel: {
@@ -1078,79 +1131,55 @@ const styles = {
 
   statValue: {
     margin: "5px 0 0",
-    color: "#111827",
-    fontSize: "26px",
+    fontSize: "27px",
   },
 
-  section: {
-    marginBottom: "42px",
-  },
-
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: "20px",
-    marginBottom: "18px",
-  },
-
-  sectionTitle: {
-    margin: 0,
-    fontSize: "22px",
-    color: "#111827",
-  },
-
-  sectionSubtitle: {
-    margin: "6px 0 0",
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-
-  performanceGrid: {
+  twoColumnGrid: {
     display: "grid",
     gridTemplateColumns:
       "repeat(auto-fit, minmax(320px, 1fr))",
     gap: "20px",
+    marginBottom: "24px",
   },
 
-  performanceCard: {
-    background: "white",
-    borderRadius: "16px",
+  card: {
+    background: "#fff",
+    borderRadius: "14px",
     padding: "22px",
+    marginBottom: "24px",
     boxShadow:
-      "0 2px 10px rgba(0,0,0,0.045)",
-    border: "1px solid #f0f1f5",
+      "0 2px 10px rgba(0,0,0,0.05)",
   },
 
   cardHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: "15px",
-    marginBottom: "16px",
+    marginBottom: "20px",
   },
 
-  performanceTitle: {
+  cardTitle: {
     margin: 0,
-    fontSize: "18px",
-    color: "#111827",
+    fontSize: "19px",
   },
 
-  cardDescription: {
+  cardSubtitle: {
     margin: "5px 0 0",
-    color: "#9ca3af",
+    color: "#6b7280",
     fontSize: "13px",
   },
 
-  cardIcon: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "10px",
-    background: "#f3f4f6",
+  warningBadge: {
+    minWidth: "30px",
+    height: "30px",
+    padding: "0 8px",
+    borderRadius: "20px",
+    background: "#fef3c7",
+    color: "#92400e",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "19px",
+    fontWeight: "700",
   },
 
   performanceList: {
@@ -1158,86 +1187,29 @@ const styles = {
     flexDirection: "column",
   },
 
-  classPerformanceItem: {
+  performanceRow: {
     display: "flex",
-    alignItems: "center",
     justifyContent: "space-between",
-    gap: "18px",
-    padding: "14px 0",
-    borderBottom:
-      "1px solid #f1f1f1",
-  },
-
-  performanceInfo: {
-    minWidth: 0,
-  },
-
-  performanceName: {
-    margin: 0,
-    fontWeight: "600",
-    color: "#111827",
-    fontSize: "14px",
-  },
-
-  performanceMeta: {
-    margin: "4px 0 0",
-    fontSize: "12px",
-    color: "#9ca3af",
-  },
-
-  percentageContainer: {
-    width: "100px",
-    flexShrink: 0,
-  },
-
-  performancePercentage: {
-    display: "block",
-    textAlign: "right",
-    fontSize: "15px",
-    color: "#2563eb",
-    marginBottom: "5px",
-  },
-
-  progressTrack: {
-    width: "100%",
-    height: "5px",
-    background: "#e5e7eb",
-    borderRadius: "10px",
-    overflow: "hidden",
-  },
-
-  progressBar: {
-    height: "100%",
-    background: "#2563eb",
-    borderRadius: "10px",
-  },
-
-  attentionRow: {
-    display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: "15px",
     padding: "12px 0",
     borderBottom:
-      "1px solid #f1f1f1",
+      "1px solid #f1f5f9",
   },
 
-  studentPerformanceInfo: {
+  performanceStudent: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    minWidth: 0,
   },
 
-  smallStudentAvatar: {
+  smallAvatar: {
     width: "36px",
     height: "36px",
     borderRadius: "50%",
     objectFit: "cover",
-    flexShrink: 0,
   },
 
-  smallStudentAvatarPlaceholder: {
+  smallAvatarPlaceholder: {
     width: "36px",
     height: "36px",
     borderRadius: "50%",
@@ -1245,133 +1217,194 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: "bold",
-    color: "#4b5563",
-    fontSize: "13px",
-    flexShrink: 0,
-  },
-
-  warningPercentage: {
-    fontSize: "15px",
     fontWeight: "700",
-    color: "#dc2626",
-    flexShrink: 0,
-  },
-
-  goodState: {
-    padding: "25px 10px 10px",
-    textAlign: "center",
-    color: "#6b7280",
-  },
-
-  goodIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "50%",
-    background: "#dcfce7",
-    color: "#16a34a",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: "0 auto 10px",
-    fontSize: "23px",
-    fontWeight: "bold",
-  },
-
-  goodTitle: {
-    margin: "0 0 5px",
-    color: "#166534",
-    fontSize: "15px",
-  },
-
-  goodText: {
-    margin: 0,
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  noData: {
-    padding: "28px 10px",
-    textAlign: "center",
-    color: "#9ca3af",
-  },
-
-  noDataIcon: {
-    fontSize: "30px",
-    marginBottom: "8px",
-  },
-
-  viewButton: {
-    border: "none",
-    background: "transparent",
-    color: "#2563eb",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "14px",
-  },
-
-  activityCard: {
-    background: "white",
-    borderRadius: "16px",
-    padding: "6px 20px",
-    boxShadow:
-      "0 2px 10px rgba(0,0,0,0.045)",
-    border: "1px solid #f0f1f5",
-  },
-
-  activityRow: {
-    display: "grid",
-    gridTemplateColumns:
-      "minmax(220px, 1fr) 150px 100px",
-    alignItems: "center",
-    gap: "20px",
-    padding: "15px 0",
-    borderBottom:
-      "1px solid #f1f1f1",
-  },
-
-  activityStudent: {
-    display: "flex",
-    alignItems: "center",
-    gap: "11px",
-    minWidth: 0,
-  },
-
-  activityAvatar: {
-    width: "38px",
-    height: "38px",
-    borderRadius: "50%",
-    objectFit: "cover",
-    flexShrink: 0,
-  },
-
-  activityAvatarPlaceholder: {
-    width: "38px",
-    height: "38px",
-    borderRadius: "50%",
-    background: "#e5e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "bold",
-    color: "#4b5563",
-    flexShrink: 0,
   },
 
   studentName: {
     margin: 0,
     fontWeight: "600",
-    color: "#111827",
+  },
+
+  mutedText: {
+    margin: "3px 0 0",
+    color: "#9ca3af",
+    fontSize: "12px",
+  },
+
+  dangerScore: {
+    color: "#dc2626",
+    fontWeight: "700",
+  },
+
+  successEmpty: {
+    textAlign: "center",
+    padding: "25px 10px",
+  },
+
+  successIcon: {
+    width: "42px",
+    height: "42px",
+    borderRadius: "50%",
+    background: "#dcfce7",
+    color: "#15803d",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    margin: "0 auto 10px",
+    fontWeight: "700",
+  },
+
+  emptySmall: {
+    padding: "25px 5px",
+    color: "#9ca3af",
+    textAlign: "center",
     fontSize: "14px",
   },
 
-  examName: {
-    margin: "4px 0 0",
-    color: "#6b7280",
-    fontSize: "13px",
+  classPerformanceList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
   },
 
-  activityClass: {
+  classPerformanceItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+
+  classInfo: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "14px",
+  },
+
+  progressBackground: {
+    width: "100%",
+    height: "9px",
+    background: "#e5e7eb",
+    borderRadius: "20px",
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    height: "100%",
+    background: "#2563eb",
+    borderRadius: "20px",
+  },
+
+  classPercentage: {
+    fontSize: "13px",
+    color: "#6b7280",
+    textAlign: "right",
+  },
+
+  tableWrapper: {
+    width: "100%",
+    overflowX: "auto",
+  },
+
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: "700px",
+  },
+
+  th: {
+    textAlign: "left",
+    padding: "13px",
+    background: "#f8fafc",
+    color: "#6b7280",
+    fontSize: "12px",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  },
+
+  td: {
+    padding: "14px 13px",
+    borderBottom:
+      "1px solid #f1f5f9",
+    fontSize: "14px",
+  },
+
+  tableStudent: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+
+  tableAvatar: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    objectFit: "cover",
+  },
+
+  tableAvatarPlaceholder: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    background: "#e5e7eb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "700",
+  },
+
+  emailText: {
+    display: "block",
+    color: "#9ca3af",
+    fontSize: "11px",
+    marginTop: "3px",
+  },
+
+  statusSuccess: {
+    display: "inline-block",
+    padding: "5px 9px",
+    borderRadius: "20px",
+    background: "#dcfce7",
+    color: "#15803d",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+
+  statusWarning: {
+    display: "inline-block",
+    padding: "5px 9px",
+    borderRadius: "20px",
+    background: "#fef3c7",
+    color: "#92400e",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+
+  statusDanger: {
+    display: "inline-block",
+    padding: "5px 9px",
+    borderRadius: "20px",
+    background: "#fee2e2",
+    color: "#b91c1c",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+
+  activityList: {
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  activityRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    padding: "15px 0",
+    borderBottom:
+      "1px solid #f1f5f9",
+  },
+
+  activityExam: {
+    margin: "4px 0 0",
     color: "#6b7280",
     fontSize: "13px",
   },
@@ -1381,18 +1414,13 @@ const styles = {
     flexDirection: "column",
     alignItems: "flex-end",
     gap: "3px",
-    color: "#111827",
-    fontSize: "14px",
   },
 
-  scoreGood: {
-    color: "#16a34a",
-    fontWeight: "600",
-  },
-
-  scoreWarning: {
-    color: "#dc2626",
-    fontWeight: "600",
+  activityScore: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: "3px",
   },
 
   assignmentGrid: {
@@ -1403,59 +1431,46 @@ const styles = {
   },
 
   assignmentCard: {
-    background: "white",
+    background: "#fff",
     borderRadius: "14px",
     padding: "20px",
     display: "flex",
     gap: "14px",
     boxShadow:
-      "0 2px 10px rgba(0,0,0,0.045)",
-    border: "1px solid #f0f1f5",
+      "0 2px 10px rgba(0,0,0,0.05)",
   },
 
   assignmentIcon: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "11px",
-    background: "#eff6ff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "21px",
-    flexShrink: 0,
+    fontSize: "26px",
   },
 
   assignmentSubject: {
     margin: 0,
-    color: "#111827",
-    fontSize: "16px",
   },
 
   assignmentClass: {
     margin: "6px 0",
     color: "#374151",
-    fontSize: "14px",
   },
 
   session: {
     margin: 0,
-    fontSize: "12px",
+    fontSize: "13px",
     color: "#9ca3af",
   },
 
   classSections: {
     display: "flex",
     flexDirection: "column",
-    gap: "18px",
+    gap: "20px",
   },
 
   classCard: {
-    background: "white",
-    borderRadius: "16px",
+    background: "#fff",
+    borderRadius: "14px",
     overflow: "hidden",
     boxShadow:
-      "0 2px 10px rgba(0,0,0,0.045)",
-    border: "1px solid #f0f1f5",
+      "0 2px 10px rgba(0,0,0,0.05)",
   },
 
   classHeader: {
@@ -1465,33 +1480,18 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "15px",
-  },
-
-  classTitle: {
-    margin: 0,
-    fontSize: "17px",
-    color: "#111827",
-  },
-
-  classSubtitle: {
-    margin: "5px 0 0",
-    color: "#6b7280",
-    fontSize: "13px",
   },
 
   studentCount: {
     background: "#eef2ff",
     color: "#4338ca",
-    padding: "6px 11px",
+    padding: "6px 10px",
     borderRadius: "20px",
-    fontSize: "12px",
-    fontWeight: "600",
-    whiteSpace: "nowrap",
+    fontSize: "13px",
   },
 
   studentList: {
-    padding: "5px 20px",
+    padding: "8px 20px",
   },
 
   studentRow: {
@@ -1504,16 +1504,15 @@ const styles = {
   },
 
   studentAvatar: {
-    width: "40px",
-    height: "40px",
+    width: "38px",
+    height: "38px",
     borderRadius: "50%",
     objectFit: "cover",
-    flexShrink: 0,
   },
 
   studentAvatarPlaceholder: {
-    width: "40px",
-    height: "40px",
+    width: "38px",
+    height: "38px",
     borderRadius: "50%",
     background: "#e5e7eb",
     display: "flex",
@@ -1521,78 +1520,61 @@ const styles = {
     justifyContent: "center",
     fontWeight: "bold",
     color: "#4b5563",
-    flexShrink: 0,
+  },
+
+  studentEmail: {
+    margin: "3px 0 0",
+    fontSize: "13px",
+    color: "#6b7280",
   },
 
   emptyCard: {
-    background: "white",
-    borderRadius: "16px",
+    background: "#fff",
+    borderRadius: "14px",
     padding: "40px",
     textAlign: "center",
     color: "#6b7280",
-    border: "1px solid #f0f1f5",
-    boxShadow:
-      "0 2px 10px rgba(0,0,0,0.035)",
   },
 
   emptyIcon: {
-    fontSize: "38px",
+    fontSize: "40px",
     marginBottom: "10px",
-  },
-
-  emptyTitle: {
-    margin: "0 0 8px",
-    color: "#111827",
-    fontSize: "17px",
   },
 
   errorCard: {
     maxWidth: "500px",
     margin: "100px auto",
-    background: "white",
-    padding: "35px",
-    borderRadius: "16px",
+    background: "#fff",
+    padding: "30px",
+    borderRadius: "14px",
     textAlign: "center",
     boxShadow:
-      "0 2px 10px rgba(0,0,0,0.06)",
+      "0 2px 10px rgba(0,0,0,0.05)",
   },
 
   errorIcon: {
-    width: "48px",
-    height: "48px",
+    width: "45px",
+    height: "45px",
     borderRadius: "50%",
     background: "#fee2e2",
     color: "#dc2626",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    margin: "0 auto 15px",
-    fontWeight: "bold",
-    fontSize: "22px",
-  },
-
-  errorTitle: {
-    margin: 0,
-    color: "#111827",
-  },
-
-  errorText: {
-    color: "#6b7280",
-    margin: "10px 0 0",
-    lineHeight: 1.5,
+    margin: "0 auto 12px",
+    fontWeight: "700",
+    fontSize: "20px",
   },
 
   primaryButton: {
-    marginTop: "18px",
+    marginTop: "15px",
     border: "none",
     background: "#2563eb",
-    color: "white",
-    padding: "11px 20px",
+    color: "#fff",
+    padding: "10px 18px",
     borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: "600",
   },
 };
 
 export default TeacherDashboard;
-
